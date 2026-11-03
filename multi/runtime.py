@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Cooperative CS2 fleet. Linux flock is the authority; markers only request stops."""
 import contextlib
+import ctypes
 import fcntl
 import hashlib
 import json
@@ -30,16 +31,33 @@ def mutable(path):
 
 def materialize(base, target):
     """Directory metadata is private; immutable files point at the RO base mount."""
+    target = target.absolute()
+    if any(p.is_symlink() for p in (target, *target.parents)):
+        raise RuntimeError('Instance root or ancestor is a symlink: ' + str(target))
     target.mkdir(parents=True, exist_ok=True)
+    def destination(name):
+        rel = Path(name)
+        if rel.is_absolute() or '..' in rel.parts or rel == Path('.'):
+            raise RuntimeError('Invalid shared manifest path: ' + str(name))
+        dest = target / rel
+        if any(p.is_symlink() for p in dest.parents if p != target and target in p.parents):
+            raise RuntimeError('Instance parent directory is a symlink: ' + str(rel))
+        return dest
     manifest = target / '.shared-files.json'
+    if manifest.is_symlink():
+        raise RuntimeError('Instance manifest is a symlink')
     old = json.loads(manifest.read_text()) if manifest.exists() else []
+    # Validate cleanup paths before performing any writes, including stale links.
+    for name in old: destination(name)
     current = []
     for source in sorted(base.rglob('*')):
         rel = source.relative_to(base)
+        if rel == Path('.shared-files.json'):
+            raise RuntimeError('Shared base contains reserved instance manifest')
         if source.is_symlink():
             # Refuse links escaping the installation (including imported overlays).
             source.resolve().relative_to(base.resolve())
-        dest = target / rel
+        dest = destination(rel)
         if source.is_dir():
             if dest.is_symlink():
                 raise RuntimeError('Instance directory is a symlink: ' + str(rel))
@@ -61,7 +79,7 @@ def materialize(base, target):
                 dest.symlink_to(source.absolute())
                 current.append(rel.as_posix())
     for name in set(old) - set(current):
-        dest = target / name
+        dest = destination(name)
         if dest.is_symlink():
             dest.unlink()
     manifest.write_text(json.dumps(current))
@@ -94,9 +112,10 @@ def atomic(path, data):
 
 def stop_child(child):
     if child.poll() is None:
-        os.killpg(child.pid, signal.SIGTERM)
+        try: os.killpg(child.pid, signal.SIGTERM)
+        except ProcessLookupError: pass
         try:
-            child.wait(timeout=int(os.getenv('STOP_TIMEOUT', '45')))
+            child.wait(timeout=float(os.getenv('STOP_TIMEOUT', '45')))
         except subprocess.TimeoutExpired:
             os.killpg(child.pid, signal.SIGKILL)
             child.wait()
@@ -202,11 +221,38 @@ def transaction(apply):
 
 
 def steam(*args):
-    result = subprocess.run([os.getenv('STEAMCMD', '/steamcmd/steamcmd.sh'), *args, '+quit'],
-                            text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                            timeout=7200)
-    if result.returncode: raise RuntimeError('SteamCMD failed; fleet remains stopped')
-    return result.stdout
+    # Adopt orphaned wrapper descendants so cleanup can reap them, not just
+    # signal them. This runtime requires Linux (as does flock and Compose).
+    libc = ctypes.CDLL(None, use_errno=True)
+    if libc.prctl(36, 1, 0, 0, 0) != 0:  # PR_SET_CHILD_SUBREAPER
+        raise OSError(ctypes.get_errno(), 'Cannot become SteamCMD child subreaper')
+    # Close the spawn/cleanup-handler race on updater shutdown.
+    mask = signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGTERM, signal.SIGINT})
+    try:
+        child = subprocess.Popen([os.getenv('STEAMCMD', '/steamcmd/steamcmd.sh'), *args, '+quit'],
+                                 text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                 start_new_session=True,
+                                 preexec_fn=lambda: signal.pthread_sigmask(signal.SIG_SETMASK, mask))
+    except BaseException:
+        signal.pthread_sigmask(signal.SIG_SETMASK, mask)
+        raise
+    try:
+        signal.pthread_sigmask(signal.SIG_SETMASK, mask)
+        output, _ = child.communicate(timeout=float(os.getenv('STEAMCMD_TIMEOUT', '7200')))
+        if child.returncode: raise RuntimeError('SteamCMD failed; fleet remains stopped')
+        return output
+    finally:
+        # Includes metadata commands: SteamCMD can update its own files there.
+        # Do not let a repeated shutdown interrupt cleanup and release our locks.
+        handlers = {s: signal.signal(s, signal.SIG_IGN) for s in (signal.SIGTERM, signal.SIGINT)}
+        try:
+            stop_child(child)
+            while True:
+                try: os.waitpid(-child.pid, 0)
+                except ChildProcessError: break
+        finally:
+            if child.stdout: child.stdout.close()
+            for sig, handler in handlers.items(): signal.signal(sig, handler)
 
 
 def public_build(text):
@@ -274,6 +320,10 @@ def install(expected, digest):
 
 
 def updater():
+    def shutdown(*_):
+        raise SystemExit(0)
+    signal.signal(signal.SIGTERM, shutdown)
+    signal.signal(signal.SIGINT, shutdown)
     policy = os.getenv('UPDATE_POLICY', 'force')
     if policy not in ('force', 'empty'): raise ValueError('UPDATE_POLICY must be force or empty')
     ids = os.getenv('INSTANCE_IDS', 'server1 server2 server3').split()

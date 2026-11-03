@@ -149,6 +149,128 @@ class RuntimeTests(unittest.TestCase):
             self.assertFalse((shared/'addons/counterstrikesharp/plugins/Example/player.db').exists())
             with self.assertRaises(FileExistsError): import_snapshot(source,shared,instance)
 
+    def test_steam_timeout_reaps_writer_before_recovery(self):
+        self.check_steam_writer('timeout')
+
+    def test_updater_shutdown_reaps_metadata_and_install_writers(self):
+        for mode in ('interrupt', 'interrupt-install', 'sigint-install'):
+            with self.subTest(mode=mode): self.check_steam_writer(mode)
+
+    def check_steam_writer(self, mode):
+        import os
+        import subprocess
+        import sys
+        import textwrap
+        import time
+        with tempfile.TemporaryDirectory() as t:
+            p = pathlib.Path(t)
+            (p/'base').mkdir(); (p/'control').mkdir()
+            writer = p/'writer.py'
+            writer.write_text(textwrap.dedent('''\
+                import os, pathlib, signal, time
+                p = pathlib.Path(os.environ['GAME_BASE'])
+                signal.signal(signal.SIGTERM, signal.SIG_IGN)
+                (p/'writer.pid').write_text(str(os.getpid()))
+                while True:
+                    with (p/'writes').open('a') as f: f.write('x')
+                    time.sleep(.02)
+            '''))
+            wrapper = p/'steamcmd'
+            wrapper.write_text('#!/bin/sh\n' + sys.executable + ' ' + str(writer) + ' &\nwait\n')
+            wrapper.chmod(0o755)
+            driver = p/'driver.py'
+            driver.write_text(textwrap.dedent('''\
+                import os, pathlib, subprocess, sys
+                sys.path.insert(0, sys.argv[1])
+                import runtime as m
+                if sys.argv[2] != 'timeout':
+                    if sys.argv[2].endswith('-install'):
+                        original = m.steam
+                        m.steam = lambda *a: ('"public" { "buildid" "1" }' if '+app_info_print' in a else original(*a))
+                        m.install = lambda *_: m.steam('+app_update', '730')
+                    m.updater()
+                else:
+                    try: m.transaction(lambda: m.steam('+app_update', '730'))
+                    except subprocess.TimeoutExpired: pass
+                    assert (m.CONTROL/'updating').exists()
+                    def recover():
+                        pid = int((m.BASE/'writer.pid').read_text())
+                        assert not pathlib.Path(f'/proc/{pid}').exists(), 'writer survived into recovery'
+                        (m.BASE/'recovered').touch()
+                    m.transaction(recover)
+            '''))
+            env = dict(os.environ, GAME_BASE=str(p/'base'), CONTROL=str(p/'control'),
+                       STEAMCMD=str(wrapper), STEAMCMD_TIMEOUT='.4', STOP_TIMEOUT='.1')
+            child = subprocess.Popen([sys.executable, str(driver), str(pathlib.Path(__file__).parent), mode], env=env)
+            pid = None
+            try:
+                end = time.monotonic()+5
+                while time.monotonic() < end and not (p/'base/writer.pid').exists(): time.sleep(.02)
+                self.assertTrue((p/'base/writer.pid').exists())
+                pid = int((p/'base/writer.pid').read_text())
+                if mode != 'timeout':
+                    import signal
+                    child.send_signal(signal.SIGINT if mode.startswith('sigint') else signal.SIGTERM)
+                self.assertEqual(child.wait(timeout=5), 0)
+                before = (p/'base/writes').read_bytes()
+                time.sleep(.2)
+                self.assertEqual((p/'base/writes').read_bytes(), before, 'Steam descendant wrote after lock release')
+                self.assertFalse(pathlib.Path(f'/proc/{pid}').exists(), 'Steam descendant was not reaped')
+                if mode == 'timeout': self.assertTrue((p/'base/recovered').exists())
+                if mode.endswith('-install'): self.assertTrue((p/'control/updating').exists())
+            finally:
+                if child.poll() is None: child.kill(); child.wait()
+                if pid is not None:
+                    try: os.kill(pid, 9)
+                    except ProcessLookupError: pass
+
+    def test_materialize_rejects_installation_root_symlink(self):
+        import runtime as m
+        with tempfile.TemporaryDirectory() as t:
+            p = pathlib.Path(t); base = p/'base'; base.mkdir()
+            outside = p/'outside'; outside.mkdir()
+            (outside/'sentinel').write_text('unchanged')
+            (base/'resource.vpk').write_text('shared')
+            target = p/'installation'; target.symlink_to(outside, target_is_directory=True)
+            with self.assertRaises(RuntimeError): m.materialize(base, target)
+            self.assertEqual(sorted(x.name for x in outside.iterdir()), ['sentinel'])
+            self.assertEqual((outside/'sentinel').read_text(), 'unchanged')
+
+    def test_materialize_confines_manifest_and_nested_destinations(self):
+        import json
+        import runtime as m
+        with tempfile.TemporaryDirectory() as t:
+            p = pathlib.Path(t); base = p/'base'; base.mkdir()
+            outside = p/'outside'; outside.mkdir()
+            sentinel = outside/'sentinel'; sentinel.write_text('unchanged')
+            target = p/'installation'; target.mkdir()
+            for kind in ('directory', 'manifest-link', 'manifest-traversal'):
+                with self.subTest(kind=kind):
+                    if kind == 'directory':
+                        (base/'nested').mkdir(); (base/'nested/new.cfg').write_text('default')
+                        (target/'nested').symlink_to(outside, target_is_directory=True)
+                    elif kind == 'manifest-link':
+                        (target/'.shared-files.json').symlink_to(sentinel)
+                    else:
+                        (outside/'link').symlink_to(sentinel)
+                        (target/'.shared-files.json').write_text(json.dumps(['../outside/link']))
+                    with self.assertRaises(RuntimeError): m.materialize(base, target)
+                    self.assertEqual(sentinel.read_text(), 'unchanged')
+                    self.assertFalse((outside/'new.cfg').exists())
+                    if kind == 'directory':
+                        (target/'nested').unlink()
+                        (base/'nested/new.cfg').unlink(); (base/'nested').rmdir()
+                    else: (target/'.shared-files.json').unlink()
+            self.assertTrue((outside/'link').is_symlink())
+
+    def test_materialize_rejects_reserved_manifest_in_base(self):
+        import runtime as m
+        with tempfile.TemporaryDirectory() as t:
+            p = pathlib.Path(t); base = p/'base'; base.mkdir()
+            manifest = base/'.shared-files.json'; manifest.write_text('base sentinel')
+            with self.assertRaises(RuntimeError): m.materialize(base, p/'instance')
+            self.assertEqual(manifest.read_text(), 'base sentinel')
+
     def test_public_build_ignores_depot_public_manifests(self):
         import runtime as m
         text='"manifests" { "public" { "gid" "123" } } "branches" { "public" { "buildid" "26393695" } }'
