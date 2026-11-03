@@ -8,3 +8,10 @@ tmp
 console.log
 settings.local.json
 CLAUDE.md
+.env
+multi/private/
+/data/
+__pycache__/
+*.pyc
+multi/shared/*
+!multi/shared/.gitkeep

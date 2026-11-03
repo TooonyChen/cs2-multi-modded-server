@@ -1,2 +1,9 @@
 .github
 custom_files_example
+.git
+.env
+.env.*
+data
+multi/private
+multi/shared
+**/__pycache__

@@ -1,0 +1,60 @@
+name: cs2-multi
+x-server: &server
+  image: cs2-multi-local:latest
+  build:
+    context: ..
+    dockerfile: multi/Dockerfile
+  command: [server]
+  restart: unless-stopped
+  stop_grace_period: 60s
+  cap_drop: [NET_RAW]
+  environment: &server-env
+    MAP: de_dust2
+    EXEC: on_boot.cfg
+  volumes: &server-volumes
+    - game:/base:ro
+    - control:/control
+    - ../data/instances/server1:/instance
+services:
+  updater:
+    image: cs2-multi-local:latest
+    build:
+      context: ..
+      dockerfile: multi/Dockerfile
+    command: [updater]
+    restart: unless-stopped
+    environment:
+      UPDATE_POLICY: ${UPDATE_POLICY:-force}
+      CHECK_INTERVAL: ${CHECK_INTERVAL:-300}
+      INSTANCE_IDS: server1 server2 server3
+    volumes:
+      - game:/base
+      - control:/control
+      - ../game/csgo:/mods:ro
+      - ../data/shared:/custom:ro
+  server1:
+    <<: *server
+    environment:
+      <<: *server-env
+      INSTANCE_ID: server1
+    env_file: ./private/server1.env
+    ports: ["27015:27015/udp", "27015:27015/tcp"]
+  server2:
+    <<: *server
+    environment:
+      <<: *server-env
+      INSTANCE_ID: server2
+    env_file: ./private/server2.env
+    volumes: ["game:/base:ro", "control:/control", "../data/instances/server2:/instance"]
+    ports: ["27016:27015/udp", "27016:27015/tcp"]
+  server3:
+    <<: *server
+    environment:
+      <<: *server-env
+      INSTANCE_ID: server3
+    env_file: ./private/server3.env
+    volumes: ["game:/base:ro", "control:/control", "../data/instances/server3:/instance"]
+    ports: ["27017:27015/udp", "27017:27015/tcp"]
+volumes:
+  game:
+  control:

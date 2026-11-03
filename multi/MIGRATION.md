@@ -1,0 +1,21 @@
+# Import an existing server privately
+
+This repository does not contain Tony's private production binaries, admin IDs, GSLTs, live .env, player database, or the live 32-mode configuration. Source templates preserve the upstream modes; the tool below incorporates the exact existing modes/configs from an operator-supplied **offline** snapshot without inventing replacements. No live server was accessed or restarted during this implementation.
+
+Create a consistent, stopped backup in your normal maintenance window; preserve the original installation, custom_files overlay, framework pins, game modes, plugin state and environment separately. The backup's resolved `game/csgo` tree must represent the effective configuration after overlays, not just old image defaults. Disable the old updater/timer when eventually switching deployments. Keep both backup and staging access restricted. Do not start the replacement with the old public ports/GSLT while the old server is running.
+
+```sh
+# Input is an extracted, PRIVATE snapshot of the existing game/csgo tree.
+# Output directories must be empty; no network or server control takes place.
+python3 multi/import_existing.py /private/snapshot/game/csgo   --shared data/shared --instance data/instances/server1
+```
+
+The importer places known immutable plugin/resource binaries plus gamedata/translations into the gitignored shared overlay. Configs, full mode JSON/cfgs, plugin-local settings and unknown plugin data stay in server1's private installation staging tree. Existing destination files and snapshot symlinks are rejected; an interrupted import may leave partial staging, so discard only those new staging directories and retry from the original backup. Never point it at your only copy or a running server tree. The public tree's gameinfo.gi is patched independently by the updater; imported addons are applied after bundled upstream mods, overriding matching filenames.
+
+The default Compose already bind mounts data/instances/server1 and data/shared, so no override is needed. Set the imported staging tree owner to `10001:10001` recursively before starting (the container initializes volume roots only). Copy the old env values manually into `multi/private/server1.env`; give new servers their own GSLTs/RCON passwords. To clone mode settings into another instance, copy selected private settings into its separate data/instances/serverN directory first. Remove or replace player data/admin identities deliberately; never share an instance tree read-write between services. The cfg/addons/logs convenience links appear when its supervisor first prepares the tree; they are relative links to installation/game/csgo and work on the host.
+
+Inspect central overlay inventory before launch. If a retired upstream plugin must be removed rather than overridden, remove it from the source `game/csgo` tree too: the shared overlay is additive. Keep matching shared/private GameModeManager API binaries together. Tony's existing GameModeManager v2 menu deployment uses Panorama dependencies and MultiAddonManager with Workshop addon 3831211166; preserve those pinned resources, config schema, map pools and the exact existing 32 GameModes entries. They are not replaced by newly invented example modes. `!modes` opens the existing mode menu; `!mode <name>` switches directly. The new architecture does not claim to fix old Metamod API incompatibilities or prove the mouse menu renders.
+
+Existing downloaded game reuse is optional: while **both deployments are stopped**, populate the new Compose game volume from a consistent complete installation snapshot (including steamapps/appmanifest_730.acf), and let the updater validate it. Do not mount the active old writable volume concurrently. The updater has no version metadata on the imported volume, so it validates/reapplies mods once before allowing starts; this can fetch missing/outdated data. The installer no longer downloads a complete game for each new server.
+
+Validate the replacement first on isolated ports: framework/plugin load, each desired mode, bot join/spawn/map transitions, then a real client join and Panorama menu clicks. Keep the original stopped deployment and backups until that acceptance succeeds. The implementation's fixture tests cover coordination and isolation, not this production migration or player experience.
