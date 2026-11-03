@@ -4,6 +4,7 @@ LABEL org.opencontainers.image.source="https://github.com/TooonyChen/cs2-multi-m
 USER root
 RUN apt-get update && apt-get install -y --no-install-recommends python3 ca-certificates curl lib32gcc-s1 lib32stdc++6 lib32z1 util-linux tini && rm -rf /var/lib/apt/lists/*
 RUN groupadd -g 10001 fleet && useradd -u 10001 -g fleet -m fleet && mkdir /steamcmd && curl -fsSL https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz | tar xz -C /steamcmd && chown -R fleet:fleet /steamcmd
+COPY LICENSE README.upstream.md /usr/share/doc/cs2-fleet/
 COPY multi/runtime.py multi/rcon_client.py multi/entrypoint.sh /app/
 ENTRYPOINT ["tini", "--", "sh", "/app/entrypoint.sh"]
 CMD ["server"]
