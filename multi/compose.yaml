@@ -19,6 +19,7 @@ services:
     platform: linux/amd64
     command: [updater]
     restart: unless-stopped
+    stop_grace_period: 60s
     environment:
       UPDATE_POLICY: ${UPDATE_POLICY:-force}
       CHECK_INTERVAL: ${CHECK_INTERVAL:-300}
