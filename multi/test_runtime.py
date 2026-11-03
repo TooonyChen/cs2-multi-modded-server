@@ -183,6 +183,9 @@ class RuntimeTests(unittest.TestCase):
                 import os, pathlib, subprocess, sys
                 sys.path.insert(0, sys.argv[1])
                 import runtime as m
+                # This test checks process/lock lifetime, not host-wide flush
+                # latency (os.sync may stall on unrelated CI runner I/O).
+                m.os.sync = lambda: None
                 if sys.argv[2] != 'timeout':
                     if sys.argv[2].endswith('-install'):
                         original = m.steam
