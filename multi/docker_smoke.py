@@ -12,6 +12,7 @@ import time
 
 ROOT = Path(__file__).resolve().parent.parent
 COMPOSE = os.getenv('COMPOSE', 'docker compose').split()
+IMAGE = os.getenv('SMOKE_IMAGE', 'cs2-multi-local:latest')
 
 
 def run(args, check=True):
@@ -39,6 +40,7 @@ def main():
         empty=p/'empty'; empty.mkdir()
         for name, svc in config['services'].items():
             svc.pop('ports',None); svc.pop('build',None); svc['restart']='no'
+            svc['image'] = IMAGE
             if name != 'updater':
                 # Exercise the default bind layout in disposable host directories.
                 state = p/name; state.mkdir(); state.chmod(0o755)
@@ -99,6 +101,6 @@ def main():
             # Runtime UID owns the bind trees; restore caller ownership for scratch cleanup.
             for name in ('server1','server2','server3'):
                 run(['docker','run','--rm','--entrypoint','chown','-v',str(p/name)+':/cleanup',
-                     'cs2-multi-local:latest','-hR',f'{os.getuid()}:{os.getgid()}','/cleanup'])
+                     IMAGE,'-hR',f'{os.getuid()}:{os.getgid()}','/cleanup'])
 
 if __name__=='__main__': main()

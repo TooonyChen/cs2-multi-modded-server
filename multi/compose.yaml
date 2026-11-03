@@ -1,9 +1,7 @@
 name: cs2-multi
 x-server: &server
-  image: cs2-multi-local:latest
-  build:
-    context: ..
-    dockerfile: multi/Dockerfile
+  image: ${CS2_IMAGE:-ghcr.io/tooonychen/cs2-multi-modded-server:latest}
+  platform: linux/amd64
   command: [server]
   restart: unless-stopped
   stop_grace_period: 60s
@@ -17,10 +15,8 @@ x-server: &server
     - ../data/instances/server1:/instance
 services:
   updater:
-    image: cs2-multi-local:latest
-    build:
-      context: ..
-      dockerfile: multi/Dockerfile
+    image: ${CS2_IMAGE:-ghcr.io/tooonychen/cs2-multi-modded-server:latest}
+    platform: linux/amd64
     command: [updater]
     restart: unless-stopped
     environment:
