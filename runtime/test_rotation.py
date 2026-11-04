@@ -41,6 +41,22 @@ class OwnershipMigrationTests(unittest.TestCase):
             self.assertEqual(old['Rotation'], migrated['Rotation'])
             self.assertEqual(migrated, migration.migrate(migrated, map_change_owner='preserve'))
 
+    def test_private_modes_and_rotation_flags_survive_both_schema_choices(self):
+        for version in (12, 13):
+            for owner in ('gmm', 'preserve'):
+                with self.subTest(version=version, owner=owner):
+                    old = self.saved(version)
+                    old['GameModes']['List'] = old['GameModes']['List'][:32]
+                    old['GameModes']['List'][0]['Config'] = 'private/custom.cfg'
+                    old['GameModes']['Default'] = old['GameModes']['List'][0]
+                    old['Rotation'].update(ModeRotation=True, ModeSchedules=True,
+                                           WhenServerEmpty=True, CustomTimeLimit=123)
+                    migrated = migration.migrate(old, map_change_owner=owner)
+                    self.assertEqual(old['GameModes'], migrated['GameModes'])
+                    expected = dict(old['Rotation'], Enabled=(owner == 'gmm'))
+                    self.assertEqual(expected, migrated['Rotation'])
+                    self.assertEqual(migrated, migration.migrate(migrated, map_change_owner=owner))
+
     def test_enabled_config_needs_no_ownership_override(self):
         old = self.saved(enabled=True)
         self.assertEqual(old['Rotation'], migration.migrate(old)['Rotation'])

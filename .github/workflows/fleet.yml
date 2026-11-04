@@ -24,6 +24,10 @@ jobs:
         run: |
           python3 -m unittest discover -s runtime -v
           python3 -m unittest discover -s tools/legacy-maintenance -v
+      - name: Pull pinned source regression toolchain
+        run: docker pull --platform linux/amd64 "$(python3 runtime/rotation_harness/run.py --image)"
+      - name: Offline source-backed map-owner regression
+        run: python3 runtime/rotation_harness/run.py
       - name: Check maintainer tools and bundled inventory
         run: |
           for script in scripts/check-updates.sh scripts/update/*.sh scripts/update/plugins/*.sh; do bash -n "$script"; done

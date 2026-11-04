@@ -21,6 +21,17 @@ class Program {
         var config = JsonSerializer.Deserialize<Config>(json)!;
         var ggConfig = JsonSerializer.Deserialize<GGConfig>(File.ReadAllText(css + "GG1MapChooser/GG1MapChooser.json"))!;
         Check(!ggConfig.VoteSettings.ChangeMapAfterVote && !ggConfig.WinDrawSettings.ChangeMapAfterWinDraw && !ggConfig.TimeLimitSettings.ChangeMapAfterTimeLimit, "GG1 must not race the bundled match-end owner");
+        Check(config.Rotation.Enabled, "packaged match-end owner must be enabled");
+        Check(!config.Rotation.ModeRotation && !config.Rotation.ModeSchedules && !config.Rotation.WhenServerEmpty,
+              "packaged map rotation must not enable automatic mode/empty/scheduled cycling");
+        using var packaged = JsonDocument.Parse(json);
+        Check(!packaged.RootElement.GetProperty("MapChooser").GetProperty("ModesInVotes").GetBoolean(), "GG1 map votes must not include mode cycling");
+        using var chooser = JsonDocument.Parse(File.ReadAllText(css + "GG1MapChooser/GG1MapChooser.json"));
+        Check(!chooser.RootElement.GetProperty("OtherSettings").GetProperty("RandomMapOnStart").GetBoolean()
+              && !chooser.RootElement.GetProperty("OtherSettings").GetProperty("LastDisconnectedChangeMap").GetBoolean(),
+              "GG1 must not add startup/empty map changes");
+        var votingCfg = File.ReadAllLines(args[0] + "/game/csgo/cfg/settings/map_voting.cfg");
+        Check(votingCfg.Any(line => line.Trim() == "mp_match_end_changelevel 0"), "engine automatic changelevel must stay disabled");
         foreach (var trigger in new[] {"round", "time"}) {
             var (manager, rotation, time, state, gg) = Setup(config, ggConfig);
             gg.FinishVote("de_inferno"); // actual DoMapChange(MapEnd), as GG1 vote completion calls it

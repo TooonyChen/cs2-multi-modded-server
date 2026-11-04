@@ -1,8 +1,8 @@
-# Match-end map-change ownership investigation
+# Match-end map-change ownership and regression
 
 The published 0.1.2 public configuration has no automatic match-end owner: GMM `Rotation.Enabled=false`, GG1 `ChangeMapAfterVote=false`, `ChangeMapAfterWinDraw=false`, `ChangeMapAfterTimeLimit=false`, and `cfg/settings/map_voting.cfg` sets `mp_match_end_changelevel 0`. This is a statement about the public bundle, **not** the effective configuration of an existing private server. Existing instance configs survive materialization.
 
-Production reportedly votes and changes maps during play. Its selected configuration values and correlated logs were not retrieved because the read-only inspection was blocked by a pending tool approval. That report must be respected; it does not identify whether the trigger was immediate RTV, end-of-match voting, a mode vote, or another owner. Do not change production or infer its settings from public defaults.
+Production reportedly votes and changes maps during play. Its actual ownership flags and correlated ordinary match-end logs remain unknown. The pinned GG1 source proves a compatible immediate RTV path independent of automatic match-end ownership; successful voting does not identify production’s match-end owner. This public-default fix does not depend on production access and makes no claim about its effective settings.
 
 ## Pinned source evidence
 
@@ -20,17 +20,24 @@ All references below are the source revisions retained in `third_party/sources/`
 
 ## Ownership options and tradeoffs
 
-A coherent GMM-owned default enables `Rotation.Enabled` while leaving `ModeRotation`, `ModeSchedules`, `WhenServerEmpty` and `MapChooser.ModesInVotes` false. GG1 selects maps and handles immediate RTV; GMM decides when ordinary automatic advancement happens. This enables map rotation, not automatic mode cycling. It uses GMM's map countdown/hold path, so the existing unresolved movement-lock behavior still requires real engine/client acceptance.
+The corrected public GMM-owned default enables `Rotation.Enabled` while leaving `ModeRotation`, `ModeSchedules`, `WhenServerEmpty` and `MapChooser.ModesInVotes` false. GG1 selects maps and handles immediate RTV; GMM decides when ordinary automatic advancement happens. This enables map rotation, not automatic mode cycling. It uses GMM's map countdown/hold path, so the existing unresolved movement-lock behavior still requires real engine/client acceptance.
 
 A deliberate GG1-owned/private setup may instead keep GMM rotation disabled and enable the appropriate GG1 end triggers, or intentionally disable automatic advancement altogether. Do not overwrite such choices. The offline migration helper requires an explicit `--map-change-owner gmm` or `preserve` when saved rotation is false; the latter warns and preserves all ownership settings. It cannot determine effective GG1/engine state from a GMM JSON alone and does not mutate companion files.
 
-The public ownership-default change is held pending the requested comparison of effective private settings. No production change, release or image cutover is authorized by this investigation.
+The only gameplay configuration change from 0.1.2 is `Rotation.Enabled: false → true`. GG1 remains the map voter and immediate RTV handler; engine automatic changelevel stays disabled. Saved private configurations are preserved until an operator explicitly migrates them. No production change or engine acceptance is implied.
 
 ## Executable regression
 
-Run `python3 runtime/rotation_harness/run.py` with Docker and `mcr.microsoft.com/dotnet/sdk:10.0` available. It validates archive digests, compiles the unchanged complete GMM `ServerManager`, `RotationManager`, and `TimeLimitManager`, and extracts the actual GG1 command/change methods and GMM bridge command into a harness. Only external boundaries (engine commands, timers, localization, chooser lookup, map metadata) are stubbed. No network/NuGet package access is used during execution.
+Prepare the exact toolchain once with network access, then run the regression offline:
 
-The test feeds actual bundled JSON into that code and asserts round-end/timed-end voted-winner advancement exactly once, waiting for an active vote, overlap suppression, retention of the current mode at the mode-rotation interval, disabled-rotation preservation, manual mode cfg/map execution, and immediate RTV-style changes with automatic rotation disabled. It is intentionally red against the unchanged 0.1.2 defaults: `round: voted winner did not advance exactly once`. A temporary local candidate changing only `Rotation.Enabled` to true passed all five scenarios; the default was restored afterward pending the ownership decision.
+```sh
+docker pull --platform linux/amd64 "$(python3 runtime/rotation_harness/run.py --image)"
+python3 runtime/rotation_harness/run.py
+```
+
+The runner pins SDK **10.0.403** with roll-forward disabled and image `mcr.microsoft.com/dotnet/sdk@sha256:de4fe90a98845d75910b9769662465c84de1a934665c431279d1382b2bddc02b`. CI performs this separate pull, then executes Docker with `--pull=never --network=none`. It validates archive digests, compiles the unchanged complete GMM `ServerManager`, `RotationManager`, and `TimeLimitManager`, and extracts the actual GG1 command/change methods and GMM bridge command into a harness. Only external boundaries (engine commands, timers, localization, chooser lookup, map metadata) are stubbed. No network/NuGet package access is used during execution.
+
+The test feeds actual bundled JSON into that code and asserts round-end/timed-end voted-winner advancement exactly once, waiting for an active vote, overlap suppression, retention of the current mode at the mode-rotation interval, disabled-rotation preservation, manual mode cfg/map execution, and immediate RTV-style changes with automatic rotation disabled. Before the fix, execution against 0.1.2 reproduced `round: voted winner did not advance exactly once`. The corrected packaged default passes all five scenarios. Explicit assertions also prevent automatic mode/empty/schedule cycling, modes in GG1 map votes, or competing bundled GG1/engine ownership from being enabled.
 
 This is source-backed callback execution, not CS2 acceptance. It enters GG1 at vote completion, bypassing vote UI/tallying, and enters GMM's time-limit path through `EnableTimeLimit(1)`. It does not prove timer scheduling for every shipped mode, Panorama rendering, native hooks, movement recovery, real Workshop downloads, or synthetic mode-vote interception.
 
