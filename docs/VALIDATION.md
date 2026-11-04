@@ -1,5 +1,16 @@
 # Validation evidence
 
+## Reviewed mod baseline (unreleased)
+
+Validated locally on 2026-11-04 without production access. See [bundle provenance, transferred fixes and limits](BUNDLED-FIXES.md). This section applies to the resource upgrade after 0.1.1; the versioned packaging evidence below remains historical.
+
+- All 21 runtime/bundle tests passed (12 runtime + 9 package tests). Checks hash the actual staged payloads and corresponding source archives, verify FixRandomSpawn 1.2.0 version/signatures/global gamedata and updater pin, preserve private configuration during actual binary materialization, check dependency/API/autoload paths and retain all 34 public modes with the deliberate Casual filename-case correction. Fresh instance admins are empty, existing private admins survive, and both immediate/map-start Casual settings references resolve with exact case.
+- A Linux amd64 image build and the real Docker/Compose offline fixture smoke passed bootstrap, three independent instance trees/read-only shared mounts, automatic updates, failure quiescence and recovery. All disposable containers/volumes were removed.
+- All nine package tests also passed inside that image with networking disabled, mounting this actual resource bundle read-only. The image lacks the development updater’s `jq` prerequisite; the successful run mounted the verified static scratch jq 1.8.1 binary read-only. An initial run without that prerequisite failed at the pin test. The inventory CLI parses 48 entries (including the menu-stack entries added to the original 44 and FixRandomSpawn); shell syntax, actionlint and maintained-file whitespace checks pass.
+- All four historical helper tests passed; no legacy scheduler is enabled. Maintained code/docs passed Git whitespace validation; vendor files retain upstream bytes, including CRLF/trailing whitespace.
+- Official CSS and allocator CI runs were freshly checked: conclusion success, exact expected head commits. GMM remains the official 2.0.0 ZIP. License texts, NuGet declarations, source commits and package/file digests are retained with the bundle.
+- No real CS2 engine, client menu rendering, live migration or restore test was performed. FixRandomSpawn 1.2.0 is now included from its verified official package with unknown upstream license metadata; the unresolved movement defect and rejected experimental patch are documented.
+
 ## v0.1.1 packaging verification
 
 Verified on 2026-11-04 without accessing production:

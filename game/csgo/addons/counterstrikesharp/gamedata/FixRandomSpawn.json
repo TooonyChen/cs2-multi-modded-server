@@ -1,0 +1,16 @@
+{
+  "CCSPlayerPawn_EntSelectSpawnPoint": {
+    "signatures": {
+      "library": "server",
+      "windows": "84 C9 0F 84 ? ? ? ? 84 C0",
+      "linux": "84 D2 0F 84 ? ? ? ? 48 8D 15 ? ? ? ? 48 8B 52"
+    }
+  },
+  "CCSPlayerPawn_EntSelectSpawnPoint_Patch": {
+    "signatures": {
+      "library": "server",
+      "windows": "0F 1F 84 00 00 00 00 00 0F 1F 84 00 00 00 00 00",
+      "linux": "0F 1F 84 00 00 00 00 00"
+    }
+  }
+}

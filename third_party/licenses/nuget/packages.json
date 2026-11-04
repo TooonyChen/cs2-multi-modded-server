@@ -1,0 +1,151 @@
+[
+  {
+    "package": "Dapper",
+    "version": "2.1.89",
+    "license": [
+      "Apache-2.0"
+    ],
+    "notices": [],
+    "url": "https://api.nuget.org/v3-flatcontainer/dapper/2.1.89/dapper.2.1.89.nupkg"
+  },
+  {
+    "package": "FastGenericNew",
+    "version": "3.3.1",
+    "license": [
+      "MIT"
+    ],
+    "notices": [],
+    "url": "https://api.nuget.org/v3-flatcontainer/fastgenericnew/3.3.1/fastgenericnew.3.3.1.nupkg"
+  },
+  {
+    "package": "McMaster.NETCore.Plugins",
+    "version": "1.4.0",
+    "license": [
+      "Apache-2.0"
+    ],
+    "notices": [],
+    "url": "https://api.nuget.org/v3-flatcontainer/mcmaster.netcore.plugins/1.4.0/mcmaster.netcore.plugins.1.4.0.nupkg"
+  },
+  {
+    "package": "Microsoft.Extensions.Configuration",
+    "version": "10.0.0",
+    "license": [
+      "MIT"
+    ],
+    "notices": [
+      "THIRD-PARTY-NOTICES.TXT"
+    ],
+    "url": "https://api.nuget.org/v3-flatcontainer/microsoft.extensions.configuration/10.0.0/microsoft.extensions.configuration.10.0.0.nupkg"
+  },
+  {
+    "package": "Microsoft.Data.Sqlite.Core",
+    "version": "10.0.12",
+    "license": [
+      "MIT"
+    ],
+    "notices": [],
+    "url": "https://api.nuget.org/v3-flatcontainer/microsoft.data.sqlite.core/10.0.12/microsoft.data.sqlite.core.10.0.12.nupkg"
+  },
+  {
+    "package": "Microsoft.DotNet.PlatformAbstractions",
+    "version": "3.1.6",
+    "license": [
+      "LICENSE.TXT"
+    ],
+    "notices": [
+      "LICENSE.TXT",
+      "THIRD-PARTY-NOTICES.TXT"
+    ],
+    "url": "https://api.nuget.org/v3-flatcontainer/microsoft.dotnet.platformabstractions/3.1.6/microsoft.dotnet.platformabstractions.3.1.6.nupkg"
+  },
+  {
+    "package": "MySqlConnector",
+    "version": "2.6.2",
+    "license": [
+      "MIT"
+    ],
+    "notices": [],
+    "url": "https://api.nuget.org/v3-flatcontainer/mysqlconnector/2.6.2/mysqlconnector.2.6.2.nupkg"
+  },
+  {
+    "package": "Scrutor",
+    "version": "4.2.2",
+    "license": [
+      "MIT"
+    ],
+    "notices": [],
+    "url": "https://api.nuget.org/v3-flatcontainer/scrutor/4.2.2/scrutor.4.2.2.nupkg"
+  },
+  {
+    "package": "Serilog",
+    "version": "4.2.0",
+    "license": [
+      "Apache-2.0"
+    ],
+    "notices": [],
+    "url": "https://api.nuget.org/v3-flatcontainer/serilog/4.2.0/serilog.4.2.0.nupkg"
+  },
+  {
+    "package": "Serilog.Extensions.Logging",
+    "version": "9.0.2",
+    "license": [
+      "Apache-2.0"
+    ],
+    "notices": [],
+    "url": "https://api.nuget.org/v3-flatcontainer/serilog.extensions.logging/9.0.2/serilog.extensions.logging.9.0.2.nupkg"
+  },
+  {
+    "package": "Serilog.Sinks.Console",
+    "version": "5.0.0",
+    "license": [
+      "Apache-2.0"
+    ],
+    "notices": [],
+    "url": "https://api.nuget.org/v3-flatcontainer/serilog.sinks.console/5.0.0/serilog.sinks.console.5.0.0.nupkg"
+  },
+  {
+    "package": "Serilog.Sinks.File",
+    "version": "5.0.0",
+    "license": [
+      "Apache-2.0"
+    ],
+    "notices": [],
+    "url": "https://api.nuget.org/v3-flatcontainer/serilog.sinks.file/5.0.0/serilog.sinks.file.5.0.0.nupkg"
+  },
+  {
+    "package": "SQLitePCLRaw.core",
+    "version": "2.1.12",
+    "license": [
+      "Apache-2.0"
+    ],
+    "notices": [],
+    "url": "https://api.nuget.org/v3-flatcontainer/sqlitepclraw.core/2.1.12/sqlitepclraw.core.2.1.12.nupkg"
+  },
+  {
+    "package": "Tomlyn",
+    "version": "0.19.0",
+    "license": [
+      "BSD-2-Clause"
+    ],
+    "notices": [],
+    "url": "https://api.nuget.org/v3-flatcontainer/tomlyn/0.19.0/tomlyn.0.19.0.nupkg"
+  },
+  {
+    "package": "Microsoft.EntityFrameworkCore",
+    "version": "7.0.14",
+    "license": [
+      "MIT"
+    ],
+    "notices": [],
+    "url": "https://api.nuget.org/v3-flatcontainer/microsoft.entityframeworkcore/7.0.14/microsoft.entityframeworkcore.7.0.14.nupkg"
+  },
+  {
+    "package": "Pomelo.EntityFrameworkCore.MySql",
+    "version": "7.0.0",
+    "license": [
+      "MIT"
+    ],
+    "notices": [],
+    "url": "https://api.nuget.org/v3-flatcontainer/pomelo.entityframeworkcore.mysql/7.0.0/pomelo.entityframeworkcore.mysql.7.0.0.nupkg"
+  }
+]

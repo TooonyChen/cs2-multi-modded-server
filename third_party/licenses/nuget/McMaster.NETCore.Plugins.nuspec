@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>McMaster.NETCore.Plugins</id>
+    <version>1.4.0</version>
+    <authors>Nate McMaster</authors>
+    <license type="expression">Apache-2.0</license>
+    <licenseUrl>https://licenses.nuget.org/Apache-2.0</licenseUrl>
+    <projectUrl>https://github.com/natemcmaster/DotNetCorePlugins</projectUrl>
+    <description>Provides API for dynamically loading assemblies into a .NET application.
+
+This package should be used by the host application which needs to load plugins.
+See https://github.com/natemcmaster/DotNetCorePlugins/blob/main/README.md for more samples and documentation.</description>
+    <releaseNotes>Changes:
+* @Sewer56 - feature: add option to support lazy loading of transitive dependencies to increase performance (PR #164)
+* @Sewer56 - bugfix: search in additional probing paths (PR #172)</releaseNotes>
+    <copyright>Copyright © Nate McMaster</copyright>
+    <tags>.NET Core plugins</tags>
+    <repository type="git" url="https://github.com/natemcmaster/DotNetCorePlugins.git" commit="715feaa749daa2e81afdd7fecaba09703bd04acb" />
+    <dependencies>
+      <group targetFramework=".NETCoreApp2.1">
+        <dependency id="Microsoft.DotNet.PlatformAbstractions" version="3.1.6" exclude="Build,Analyzers" />
+        <dependency id="Microsoft.Extensions.DependencyModel" version="5.0.0" exclude="Build,Analyzers" />
+        <dependency id="System.Text.Json" version="5.0.1" exclude="Build,Analyzers" />
+      </group>
+      <group targetFramework=".NETCoreApp3.1">
+        <dependency id="Microsoft.DotNet.PlatformAbstractions" version="3.1.6" exclude="Build,Analyzers" />
+        <dependency id="Microsoft.Extensions.DependencyModel" version="5.0.0" exclude="Build,Analyzers" />
+      </group>
+    </dependencies>
+  </metadata>
+</package>

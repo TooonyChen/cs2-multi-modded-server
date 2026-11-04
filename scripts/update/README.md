@@ -8,6 +8,10 @@ commit" routine for the mods listed in this repo's `docs/UPSTREAM.md` version ta
 (`Mod | Version | Why`). No AI involved, safe to re-run, and it refuses to act when
 anything looks off.
 
+## Reviewed pins
+
+`pins.json` blocks generic latest-release replacement of the reviewed CSS native/API pair, Metamod CS2 branch, MultiAddonManager and menu/allocator stack. These components report `PIN` before any release lookup or mutation. Review replacements as complete packages using [the provenance and migration notes](../../docs/BUNDLED-FIXES.md); remove or update the pin only as part of that reviewed change. This development tool is separate from the fleet updater sidecar.
+
 ## Running it
 
 Always run from a checkout of this repo (the script `cd`s to the repo root itself, so
