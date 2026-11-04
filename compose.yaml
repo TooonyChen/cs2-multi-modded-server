@@ -1,6 +1,6 @@
 name: cs2-multi
 x-server: &server
-  image: ${CS2_IMAGE:-ghcr.io/tooonychen/cs2-multi-modded-server:0.1.0}
+  image: ${CS2_IMAGE:-ghcr.io/tooonychen/cs2-multi-modded-server:0.1.1}
   platform: linux/amd64
   command: [server]
   restart: unless-stopped
@@ -15,7 +15,7 @@ x-server: &server
     - ./data/instances/server1:/instance
 services:
   updater:
-    image: ${CS2_IMAGE:-ghcr.io/tooonychen/cs2-multi-modded-server:0.1.0}
+    image: ${CS2_IMAGE:-ghcr.io/tooonychen/cs2-multi-modded-server:0.1.1}
     platform: linux/amd64
     command: [updater]
     restart: unless-stopped

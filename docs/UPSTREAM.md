@@ -4,6 +4,8 @@ This project derives from [Kus’ CS2 Modded Dedicated Server](https://github.co
 
 The original single-server deployment instructions are available in [upstream](https://github.com/kus/cs2-modded-server/blob/master/README.md) and this repository’s history. Use this project’s root README for deployment. This inventory records the bundled defaults, not private overlays or proof of plugin compatibility with the latest game. Maintainers update the table alongside reviewed resource changes.
 
+Bundled resources are mounted from the host by the updater, not baked into the runtime image. Bundled does not mean loaded: plugins under `plugins/disabled/` are available for explicit mode/settings loading; startup cfgs and framework configuration determine activation. This public inventory does not include private production replacements or custom menu configurations.
+
 ## Mods installed
 
 Mod | Version | Why

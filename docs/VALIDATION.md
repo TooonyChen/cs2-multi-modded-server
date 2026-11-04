@@ -1,5 +1,17 @@
 # Validation evidence
 
+## v0.1.1 packaging verification
+
+Verified on 2026-11-04 without accessing production:
+
+- The root English README covers deployment, configuration, architecture, update policies, bundled mod activation, development and acceptance limits. All 29 local Markdown links in the root README and `docs/*.md`, including linked heading anchors, resolved.
+- The deployment default is pinned to `ghcr.io/tooonychen/cs2-multi-modded-server:0.1.1`. Root Compose configuration validation passed using the private example env files and standalone Compose v5.7.0.
+- Against the original `v0.1.0` Git tag, `runtime.py`, `rcon_client.py`, `entrypoint.sh`, the importer, env example, Steam fixture and runtime tests are byte-identical after mapping old `multi/` paths to `runtime/`. The Docker smoke runner only adapts root paths and omits private env resolution. The entire `game/` Git tree is identical (`0f9ee6ba00775b4c4a39434797f771650b8c76af`), as is LICENSE. This is a source-layout/documentation packaging release, with no runtime behavior or plugin resource change.
+- Runtime suite: 12 passed. Historical helper suite: 4 passed. The inventory tool parsed all 44 bundled entries. Git whitespace validation passed.
+- A Linux amd64 root image build passed. Its real Docker fixture smoke passed bootstrap, three read-only base mounts, independent host cfg/admin files, automatic build-2 update, build-999 failure keeping every game stopped, and build-3 retry/recovery preserving private configuration. The disposable project and volumes were removed.
+
+Hosted tag CI, the published digest and anonymous pull provenance are recorded in the [v0.1.1 release](https://github.com/TooonyChen/cs2-multi-modded-server/releases/tag/v0.1.1). Image rebuilds may differ in base/package layers because the Dockerfile uses a moving upstream base and package repositories; identical runtime source does not imply an identical image digest. The earlier `0.1.0` semantic image is not overwritten. Gameplay and production acceptance limits below still apply.
+
 Executed locally on 2026-11-04; no production service was accessed or restarted.
 
 - Docker Engine 26.1.5, Linux amd64. Docker Compose v5.7.0 standalone binary was downloaded into the session scratch directory because the host had no Compose plugin.
