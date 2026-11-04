@@ -26,15 +26,13 @@ jobs:
           python3 -m unittest discover -s tools/legacy-maintenance -v
       - name: Check maintainer tools and bundled inventory
         run: |
-          for script in scripts/check-updates.sh scripts/update/*.sh scripts/update/plugins/*.sh legacy/single-server/install_docker.sh; do bash -n "$script"; done
+          for script in scripts/check-updates.sh scripts/update/*.sh scripts/update/plugins/*.sh; do bash -n "$script"; done
           bash scripts/update/update.sh --list --no-pull
       - name: Validate public deployment configuration
         run: |
           mkdir -p private
           for n in 1 2 3; do cp runtime/server.env.example private/server$n.env; done
           docker compose config --quiet
-          cp legacy/single-server/server.env.example private/single-server.env
-          docker compose -f legacy/single-server/compose.yaml config --quiet
       - name: Build Linux amd64 runtime
         run: docker build --platform linux/amd64 -t cs2-multi-local:latest .
       - name: Offline Docker coordination and isolation smoke

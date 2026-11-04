@@ -45,6 +45,5 @@ docker compose up -d
 - [导入已有服和私有资源](docs/MIGRATION.md)
 - [构建、测试及目录说明](docs/DEVELOPMENT.md)
 - [实际验证及边界](docs/VALIDATION.md)
-- [保留的原始单服 Docker 部署](legacy/single-server/README.md)（独立项目，不能与 fleet 共享安装）
 
 自动化验证覆盖离线进程夹具和真实容器协调；完整 CS2 下载、真人加入、插件兼容性和模式面板交互仍需隔离环境验收。迁移与生产切换需另外执行。
