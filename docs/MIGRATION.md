@@ -1,6 +1,6 @@
 # Import an existing server privately
 
-For the current public GMM 2.0.0/CSS/allocator resource upgrade, also follow [bundled fixes and saved-config migration](BUNDLED-FIXES.md). Imported private overlays take precedence over the bundle: audit old binaries and explicitly migrate saved schema-12 menu configuration before launch. The public defaults preserve 34 modes; a private server's 32-mode list remains private.
+For the current public GMM 2.0.0/CSS/allocator resource upgrade, also follow [bundled fixes and saved-config migration](BUNDLED-FIXES.md). Imported private overlays take precedence over the bundle: audit old binaries and explicitly migrate saved schema-12/13 configuration before launch. A saved disabled rotation requires `--map-change-owner gmm` or `--map-change-owner preserve`; the helper changes no GG1/engine flags and preserves private mode entries. Review companion ownership settings as documented before choosing GMM. The public defaults preserve 34 modes; a private server's 32-mode list remains private.
 
 This repository does not contain Tony's private production binaries, admin IDs, GSLTs, live .env, player database, or the live 32-mode configuration. Source templates preserve the upstream modes; the tool below incorporates the exact existing modes/configs from an operator-supplied **offline** snapshot without inventing replacements. No live server was accessed or restarted during this implementation.
 

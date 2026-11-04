@@ -78,7 +78,7 @@
     "Style": "center"
   },
   "Rotation": {
-    "Enabled": false,
+    "Enabled": true,
     "Cycle": 0,
     "MapGroups": [
       "mg_active",
