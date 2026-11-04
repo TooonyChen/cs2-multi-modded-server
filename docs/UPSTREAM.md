@@ -56,7 +56,7 @@ Mod | Version | Why
 ### Updating the mods in this repo
 
 > [!NOTE]
-> This is for maintaining the repo (or your fork of it), not for updating a running server. To update a server just re-run the install script for your platform.
+> This is for maintaining bundled resources in a development checkout. Running fleets apply staged overlays through the updater sidecar; follow [operations and recovery](OPERATIONS.md) before changing shared defaults.
 
 Keeping the table above current used to be a manual chore: check every project for a new release, download it, copy the right files into `/game/`, bump the version and commit. That is now scripted in [`/scripts/update/`](../scripts/update/) and needs no AI, it is plain bash.
 
