@@ -32,3 +32,5 @@ The root layout cleanup was verified on 2026-11-04 with Docker Engine 26.1.5 and
 - `bash scripts/update/update.sh --list --no-pull` parsed all 44 bundled inventory entries from `docs/UPSTREAM.md`. Shell syntax and Git whitespace checks passed.
 
 An initial smoke invocation hit an external 60-second tool timeout; only its disposable project was cleaned up and both complete runs above then passed with sufficient command time. No remote host, running migration or production service was accessed or changed. These are orchestration fixture checks; the gameplay acceptance limits above still apply.
+
+The original Docker single-server installer/build/Compose is retained separately under `legacy/single-server/`, using the single root game resource pack. Its Compose renders successfully using an example env file and its installer passes Bash syntax validation. It was not deployed or used for CS2 gameplay tests. Root fleet image context excludes this historical deployment.

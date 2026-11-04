@@ -1,0 +1,12 @@
+*
+!game/
+!game/**
+!legacy/
+legacy/*
+!legacy/single-server/
+legacy/single-server/*
+!legacy/single-server/install_docker.sh
+!LICENSE
+!docs/
+docs/*
+!docs/UPSTREAM.md

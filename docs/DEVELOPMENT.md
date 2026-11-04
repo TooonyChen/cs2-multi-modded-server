@@ -10,6 +10,7 @@ Run commands from the repository root. Production deployments use the public ima
 | `game/csgo/` | Bundled upstream mod overlay, mounted by the updater; not baked into the image |
 | `private/`, `data/` | Ignored operator credentials and persistent instance/overlay files |
 | `scripts/update/` | Maintainer-only tools for reviewed updates to bundled mods and `docs/UPSTREAM.md` |
+| `legacy/single-server/` | Original Docker installer/build/Compose isolated from the fleet, reusing root mod resources |
 | `tools/legacy-maintenance/` | Historical sanitized helpers and documented limitations, never started by Compose |
 | `docs/` | Operations, migration, attribution and validation evidence |
 
@@ -29,4 +30,4 @@ The smoke test uses a random project, disposable bind directories, no published 
 
 The image build uses an allowlist context containing only runtime code, license and attribution. Tests, game resources, private data, credentials, and historical scripts never enter the context. `.github/workflows/fleet.yml` runs tests, root Compose validation, build and Docker smoke. A separate trusted job publishes default-branch SHA/latest tags and semantic version tags after checks pass; PRs have no registry write permission. Release tags must belong to the default branch. Never overwrite a released semantic version; runtime changes need a new release. Directory-only cleanup keeps deployments pinned to `0.1.0`.
 
-The upstream single-server Docker/host/Windows/Kubernetes launchers, cloud scripts, custom-file examples and inherited disabled workflows were removed. Git history preserves them. Existing deployments that used `-f multi/compose.yaml` should keep their old checkout through migration, or switch to root Compose and move `multi/private/serverN.env` to `private/serverN.env`. Root bind paths still resolve to the same repository `data/` and `game/csgo/`; project and named-volume identities remain `cs2-multi`. This source cleanup does not migrate, stop or restart any deployment.
+The useful upstream single-server Docker deployment is isolated in `legacy/single-server/`. Host/Windows/Kubernetes launchers, cloud scripts, destructive process-kill helpers, custom-file examples and inherited disabled workflows were removed; Git history preserves them. Existing deployments that used `-f multi/compose.yaml` should keep their old checkout through migration, or switch to root Compose and move `multi/private/serverN.env` to `private/serverN.env`. Root bind paths still resolve to the same repository `data/` and `game/csgo/`; project and named-volume identities remain `cs2-multi`. This source cleanup does not migrate, stop or restart any deployment.
