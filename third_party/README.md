@@ -13,10 +13,11 @@ The fleet source license does not replace component licenses. The packaged plugi
 | MultiAddonManager | GPLv3 | `licenses/MultiAddonManager-LICENSE`, source archive; official autoload VDF enabled |
 | RetakesAllocator | GPLv3 | `licenses/RetakesAllocator-LICENSE`, official CI source archive |
 | CounterStrikeSharp | GPLv3 with upstream linking exception | `licenses/CounterStrikeSharp-LICENSE`, `licenses/CounterStrikeSharp-LICENSE.GPL3`, source archive |
+| FixRandomSpawn | Unknown (no upstream license metadata found) | Official v1.2.0 package, pinned source archive; no license grant inferred |
 | Gameloop.Vdf | MIT | `licenses/Gameloop.Vdf-LICENSE` |
 | Newtonsoft.Json | MIT | `licenses/Newtonsoft.Json-LICENSE` |
 | Harmony | MIT | `licenses/Harmony-LICENSE` |
 
 The package dependency manifests (`*.deps.json`) retain the exact dependency names/versions. `licenses/nuget/` retains NuGet license declarations (`.nuspec`) and available package notices plus upstream license texts: Microsoft/FastGenericNew/MySqlConnector/Scrutor/Pomelo are MIT; Dapper/McMaster/Serilog/SQLitePCLRaw are Apache-2.0; Tomlyn is BSD-2-Clause. Microsoft .NET runtime license/third-party notices remain under the existing dotnet trees. Source archives retain each project's dependency declarations and upstream notices. The Workshop addon is downloaded by Steam/MultiAddonManager at runtime and is not redistributed here. Existing Metamod, MultiAddonManager, MatchZy and InventorySimulator artifacts remain unchanged by this upgrade.
 
-FixRandomSpawn is deliberately absent because upstream v1.2.0 does not expose a redistribution license. See the blocker in BUNDLED-FIXES; source availability is not a license grant.
+FixRandomSpawn 1.2.0 by xstage is included from the official qstage/CS2-FixRandomSpawn release at the maintainer’s explicit instruction. The tagged source, README and project metadata expose no license grant; its license remains unknown and the fleet LGPL does not apply to it. The exact upstream source archive is retained in `sources/`; package, file and source digests are recorded in the baseline manifest. See [BUNDLED-FIXES](../docs/BUNDLED-FIXES.md) for installation paths, metadata differences and spawn behavior.

@@ -76,6 +76,14 @@
       "license": "GPL-3.0",
       "source_archive": "third_party/sources/MultiAddonManager-3e04eff3a3a656320d86bdde20394c28a23407b3.tar.gz",
       "source_sha256": "ae52565858a1e6f64e82e1d0a4735c89a1b423ce73bdc4433dbb385b7bafdbe9"
+    },
+    {
+      "component": "FixRandomSpawn",
+      "source": "https://github.com/qstage/CS2-FixRandomSpawn/tree/65fb0252a0d020f546b5ee8d34dfef9a31c769bf",
+      "commit": "65fb0252a0d020f546b5ee8d34dfef9a31c769bf",
+      "license": "UNKNOWN: no license grant found in tagged source/README/project metadata",
+      "source_archive": "third_party/sources/FixRandomSpawn-65fb0252a0d020f546b5ee8d34dfef9a31c769bf.tar.gz",
+      "source_sha256": "3c0d4e7d82d8680d674a183bd30bafc6235ec3b5ecca1dccab0410e33204a913"
     }
   ],
   "packages": [
@@ -103,6 +111,11 @@
       "name": "RetakesAllocator 2.4.3",
       "url": "https://github.com/yonilerner/cs2-retakes-allocator/actions/runs/32672528898",
       "sha256": "1f53d62949a45dbc2380d260dcb82f81b4601737b171e1748124500526298e2a"
+    },
+    {
+      "name": "FixRandomSpawn 1.2.0",
+      "url": "https://github.com/qstage/CS2-FixRandomSpawn/releases/download/v1.2.0/CS2-FixRandomSpawn.zip",
+      "sha256": "554e5ebe5fb1046e263ff4745477a7f39c91131332918d342ed6e9f595aaed1b"
     }
   ],
   "gamedata": {
@@ -330,6 +343,12 @@
     "game/csgo/addons/metamod/bin/linuxsteamrt64/metamod.2.cs2.so": "919db0dbfcaa2800d248699ba77925a87943ba852b3a319d41f59b396325b85e",
     "game/csgo/addons/multiaddonmanager/bin/multiaddonmanager.so": "3db116901b0ff215bde10dadbab1b191ab684b7d11ae1d978a294066a1eba954",
     "game/csgo/addons/counterstrikesharp/gamedata/RetakesAllocator.json": "6fa48c8e9e052aa85128bef0eb27855045e59d417fdf1c1f841ee49550ec255d",
-    "game/csgo/addons/counterstrikesharp/gamedata/gamedata.json": "62bd8c4fba251b5fc95834d01e6c1d92bac9e6f79a6899f6421be6e82170f562"
+    "game/csgo/addons/counterstrikesharp/gamedata/gamedata.json": "62bd8c4fba251b5fc95834d01e6c1d92bac9e6f79a6899f6421be6e82170f562",
+    "game/csgo/addons/counterstrikesharp/plugins/FixRandomSpawn/FixRandomSpawn.deps.json": "00d8f8ee6013d70356017aaa9105ef62b3b1165e399e9564022b39f7a596b9a1",
+    "game/csgo/addons/counterstrikesharp/plugins/FixRandomSpawn/FixRandomSpawn.dll": "6c03d8ebe8ae8bc2c4308ff7dcd07811b1eec51969293c64c5d0c8f16e9f729f",
+    "game/csgo/addons/counterstrikesharp/plugins/FixRandomSpawn/FixRandomSpawn.pdb": "cc6f7cc40787b91949dad0dfd96278d95fd7e35864aef8d5e7f501cc8e615523",
+    "game/csgo/addons/counterstrikesharp/plugins/FixRandomSpawn/lang/en.json": "a0703416b7439e6e738f159a72c7d10845707d2b38655381f85e3e34bf91c4fa",
+    "game/csgo/addons/counterstrikesharp/plugins/FixRandomSpawn/lang/ru.json": "824a8eea08cadbdf50d7657d45099c70b4b8bfb8e49bb077cab39c60bbb71fe6",
+    "game/csgo/addons/counterstrikesharp/gamedata/FixRandomSpawn.json": "78a696a42a2f8b456f50bfcbc72b5d30ac4b1849d015b667ae37ca45577f5911"
   }
 }

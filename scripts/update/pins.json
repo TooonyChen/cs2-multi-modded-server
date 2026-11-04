@@ -1,4 +1,5 @@
 {
+  "cs2-fixrandomspawn": "1.2.0: verified official release package and global gamedata; review spawn behavior across modes",
   "counterstrikesharp": "1.0.380-1: official CI run 41547891527, native/API pair; stable 1.0.379 is older",
   "metamod-source": "2.0.0-1483: CS2 interface 18; GitHub latest may select incompatible 1.12",
   "multiaddonmanager": "1.7.3: verified steamrt3 artifact",
