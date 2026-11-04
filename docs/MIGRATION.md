@@ -1,5 +1,7 @@
 # Import an existing server privately
 
+For the current public GMM 2.0.0/CSS/allocator resource upgrade, also follow [bundled fixes and saved-config migration](BUNDLED-FIXES.md). Imported private overlays take precedence over the bundle: audit old binaries and explicitly migrate saved schema-12 menu configuration before launch. The public defaults preserve 34 modes; a private server's 32-mode list remains private.
+
 This repository does not contain Tony's private production binaries, admin IDs, GSLTs, live .env, player database, or the live 32-mode configuration. Source templates preserve the upstream modes; the tool below incorporates the exact existing modes/configs from an operator-supplied **offline** snapshot without inventing replacements. No live server was accessed or restarted during this implementation.
 
 Create a consistent, stopped backup in your normal maintenance window; preserve the original installation, custom_files overlay, framework pins, game modes, plugin state and environment separately. The backup's resolved `game/csgo` tree must represent the effective configuration after overlays, not just old image defaults. Disable the old updater/timer when eventually switching deployments. Keep both backup and staging access restricted. Do not start the replacement with the old public ports/GSLT while the old server is running.

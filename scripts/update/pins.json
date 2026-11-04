@@ -1,0 +1,10 @@
+{
+  "counterstrikesharp": "1.0.380-1: official CI run 41547891527, native/API pair; stable 1.0.379 is older",
+  "metamod-source": "2.0.0-1483: CS2 interface 18; GitHub latest may select incompatible 1.12",
+  "multiaddonmanager": "1.7.3: verified steamrt3 artifact",
+  "panoramamenumanager": "1.3.01: bundled with reviewed GameModeManager 2.0.0",
+  "gg1mapchooser": "1.8.1: bundled with reviewed GameModeManager 2.0.0",
+  "pmm-gg1mapchooser": "0.1.0: bundled with reviewed GameModeManager 2.0.0",
+  "gamemodemanager": "2.0.0: update the complete matching menu dependency stack together",
+  "cs2-retakes-allocator": "2.4.3: official CI run 32672528898 plus pinned plugin-local gamedata"
+}

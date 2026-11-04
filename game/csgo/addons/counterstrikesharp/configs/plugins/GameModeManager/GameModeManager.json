@@ -1,5 +1,5 @@
 {
-  "Version": 12,
+  "Version": 13,
   "RTV": {
     "Enabled": true,
     "Style": "center",
@@ -36,7 +36,7 @@
   "Votes": {
     "Enabled": true,
     "Maps": true,
-    "Style": "center",
+    "Style": "menu",
     "GameModes": true,
     "GameSettings": false
   },
@@ -391,5 +391,12 @@
         ]
       }
     ]
+  },
+  "WorkshopAddon": "3831211166",
+  "MapChooser": {
+    "GeneratePools": true,
+    "TriggerSecondsBeforeEnd": 120,
+    "TriggerKillsBeforeEnd": 13,
+    "ModesInVotes": false
   }
 }

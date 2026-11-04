@@ -188,7 +188,16 @@ fail_mod() {   # $1 message  (records failure, adds a flag)
 process_mod() {   # $1 name, $2 url, $3 current version
     PLUGIN_NAME="$1"; PLUGIN_URL="$2"; OLD_VERSION="$3"; NEW_VERSION=""
     PLUGIN_SLUG=$(slugify "$PLUGIN_NAME")
-    local latest last_updated script
+    local latest last_updated script pin
+
+    # Reviewed CI/native/API baselines must not be replaced by arbitrary latest
+    # releases (GitHub latest can be older or the wrong Metamod branch).
+    pin=$(jq -r --arg slug "$PLUGIN_SLUG" '.[$slug] // empty' "scripts/update/pins.json")
+    if [ -n "$pin" ]; then
+        log "PIN $PLUGIN_NAME $OLD_VERSION: $pin"
+        RES_UPTODATE+=("$PLUGIN_NAME $OLD_VERSION (reviewed pin)")
+        return 0
+    fi
 
     latest=$(set +u; set +e; set +o pipefail; fetch_latest_release "$PLUGIN_URL" 2>/dev/null)
     if [ -z "$latest" ]; then

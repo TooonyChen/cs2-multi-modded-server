@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>FastGenericNew</id>
+    <version>3.3.1</version>
+    <authors>Boring3</authors>
+    <license type="expression">MIT</license>
+    <licenseUrl>https://licenses.nuget.org/MIT</licenseUrl>
+    <icon>Logo.png</icon>
+    <readme>README_nuget.md</readme>
+    <projectUrl>https://github.com/Nyrest/FastGenericNew</projectUrl>
+    <description>The ultimate fast alternative to Activator.CreateInstance&lt;T&gt;
+
+Up to 50x faster than Activator.CreateInstance&lt;T&gt;
+Generic Parameters Support
+Non-Public Constructor Support
+No Generic Constraints
+TryGetValue-like TryFastNew API
+Link Mode PublishTrimmed Support
+C# 8 Nullable Support
+C# 10 Parameterless struct constructors Support (Both invokes or not)</description>
+    <tags>Performance, Fast, Generic, New, Expression, Optimization, CreateInstance, Activator, DynamicMethod, , Generated</tags>
+    <repository type="git" url="https://github.com/Nyrest/FastGenericNew" commit="f4e9f9089560c44574482152cbd43838b74e68cd" />
+    <dependencies>
+      <group targetFramework=".NETFramework4.6.1">
+        <dependency id="System.Runtime.CompilerServices.Unsafe" version="6.0.0" exclude="Build,Analyzers" />
+      </group>
+      <group targetFramework=".NETFramework4.8">
+        <dependency id="System.Runtime.CompilerServices.Unsafe" version="6.0.0" exclude="Build,Analyzers" />
+      </group>
+      <group targetFramework="net6.0" />
+      <group targetFramework="net8.0" />
+      <group targetFramework=".NETStandard2.0">
+        <dependency id="System.Reflection.Emit.Lightweight" version="4.7.0" exclude="Build,Analyzers" />
+        <dependency id="System.Runtime.CompilerServices.Unsafe" version="6.0.0" exclude="Build,Analyzers" />
+      </group>
+      <group targetFramework=".NETStandard2.1">
+        <dependency id="System.Runtime.CompilerServices.Unsafe" version="6.0.0" exclude="Build,Analyzers" />
+      </group>
+    </dependencies>
+  </metadata>
+</package>

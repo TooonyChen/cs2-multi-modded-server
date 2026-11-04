@@ -1,0 +1,57 @@
+# Reviewed bundled fixes and migration
+
+This branch carries transferable fixes from a separately validated server into the public resource bundle. It changes no running server. The English deployment documentation and released image remain at 0.1.1; resource changes need independent review before a later release. Bundled resources are host-mounted, so changing an image tag alone does not update them.
+
+## Included and retained
+
+| Component | Bundle decision | Evidence and limits |
+| --- | --- | --- |
+| GameModeManager | Upgrade 1.0.62 → official 2.0.0, released 2026-11-01 | Official ZIP SHA-256 `b93a987870eb4bfeeca40d7c5db8100c2fb383830d4e58c3fc40126e75f623f1`; latest official release checked 2026-11-04. No experimental movement patch. |
+| Menu stack | Install the complete GMM ZIP stack | MenuManagerCore/MenuManagerApi 1.3.01, GG1MapChooser/ggmcAPI 1.8.1, PMM_GG1MapChooser 0.1.0. Menu core/API binaries match the official PanoramaMenuManager 1.3.01 release byte-for-byte. Both copies of GameModeManager.Shared.dll match. The old active WASDMenuAPI moves to `plugins/disabled/`; its shared files remain available for unrelated plugins. |
+| CSS | Upgrade 1.0.379 → official CI 1.0.380-1 | Successful run [41547891527](https://github.com/roflmuffin/CounterStrikeSharp/actions/runs/41547891527), commit `b517fb2b7dd0a3658aab211ab6eae44dba4f76b1`. Linux native, Windows native and managed API from that same run. Existing .NET 10 runtime retained. Stable latest is still 1.0.379; prevent automatic downgrade. |
+| Metamod | Retain 2.0.0-git1483 | Existing Linux CS2 native binary matches the official archive, SHA-256 `0fdcccaa369937ed7f521c78462314b5266f39c1d65a84e4c2d3847324cd7776`. Interface 18 is required; GitHub's generic latest currently selects 1.12. |
+| MultiAddonManager | Retain 1.7.3 steamrt3; enable official autoload VDF | Existing Linux native binary matches the official archive, SHA-256 `437cbaf5537a47c5bfd341a42749271b4d659bc42c0405a785d2a5d86cda4e58`. Preserve existing Workshop `3461824328`, append menu addon `3831211166`. |
+| RetakesAllocator | Upgrade 2.4.2 → official CI 2.4.3 | Successful run [32672528898](https://github.com/yonilerner/cs2-retakes-allocator/actions/runs/32672528898), commit `b4f225af75511aa8d86126fb3fced2f53f592c49`; stays disabled until a mode loads it. |
+| Allocator gamedata/fallback | Install pinned signatures in both lookup locations | Source commit `95fad69a89000364ca467add3e78e61e6953d7ff`; full JSON in `plugins/disabled/RetakesAllocator/gamedata/RetakesAllocator_gamedata.json`, legacy global JSON retains GiveNamedItem2. Defaults set `EnableCanAcquireHook=false`, `CapabilityWeaponPaints=false`; standard weapon allocation remains, allocator-specific weapon paints integration is omitted. `AutoUpdateSignatures=false` keeps these reviewed signatures pinned. |
+| MatchZy / InventorySimulator | Retain 0.9.2 / 3.7.2 | Public bundle already meets the validated versions. |
+| ServerListPlayersFix | Retain public 2.1 | The private server's old 1.0.8 interface-18 rejection does not justify downgrading the newer public artifact. Public native compatibility still needs engine acceptance. |
+
+## FixRandomSpawn redistribution blocker
+
+The public bundle has an update script for FixRandomSpawn but **no installed FixRandomSpawn plugin**. The validated private replacement was 1.2.0 after a 1.1.4 bot PRESPAWN crash. Official 1.2.0 ZIP SHA-256 is `554e5ebe5fb1046e263ff4745477a7f39c91131332918d342ed6e9f595aaed1b`; its archive starts at `plugins/` and `gamedata/`, relative to `addons/counterstrikesharp/`.
+
+The upstream [v1.2.0 source tree](https://github.com/qstage/CS2-FixRandomSpawn/tree/v1.2.0) and repository license API expose no license grant. Public source and a download do not by themselves grant redistribution rights. Consequently its binaries are not added here. Obtain an explicit redistribution license before checking them in. This is a delivery limitation: the private bot-crash fix has not been transferred into the public bundle. The existing helper is a maintainer download mechanism, not evidence that the plugin is present or licensed.
+
+## Preserve saved configuration
+
+The bundled GameModeManager JSON keeps the **34 public mode entries**, their order, default, maps/map groups, warmup, rotation and commands. It migrates schema 12 → 13, sets WorkshopAddon `3831211166`, maps old RTV time/kill triggers and IncludeModes into MapChooser, and changes the unsupported vote style `center` to `menu`. The old RTV object remains for reference; GMM 2.0.0 ignores it. GG1 now owns RTV, nomination and map voting, so settings such as vote durations, round triggers and extension rules require deliberate review against its new configuration. They do not migrate automatically.
+
+Existing instance cfg/JSON is deliberately retained by `materialize`; fresh bundle defaults do not overwrite saved choices. For an existing fleet:
+
+1. Stop all consuming game processes using the operations procedure. Back up each instance's cfg, addon/config directories, permissions, plugin-local databases and the overlay privately. Keep a copy of the old bundle as well.
+2. Stage the reviewed resource tree as the shared overlay; do not unzip release defaults over an instance's cfg. Run the offline helper once for each saved GMM JSON:
+
+   ```sh
+   python3 scripts/migrate-menu-config.py data/instances/server1/addons/counterstrikesharp/configs/plugins/GameModeManager/GameModeManager.json
+   ```
+
+   It preserves non-menu values, refuses unsupported schema/symlink paths and writes an exclusive `.before-panorama` backup. It does not migrate GG1 or private allocator config. Run it as the instance file owner; back up first and keep the backup private.
+3. Review the three new menu configs. Preserve any existing custom menu/chooser settings and adopt required ownership rules from the bundled GG1 config: disable ChangeMapAfterWinDraw, ChangeMapAfterTimeLimit, RandomMapOnStart and LastDisconnectedChangeMap, and retain `wasd` menu modes for the bridge. In each saved allocator `plugins/disabled/RetakesAllocator/config/config.json`, merge the three fallback/pinning keys above without replacing weapon preferences or databases.
+4. Ensure no old autoloaded WASD plugin survives in a private overlay. Immutable stale links managed by this runtime disappear; imported regular binaries must be audited separately. Keep MenuManagerApi only under `shared/MenuManagerApi`; refresh any plugin-local GameModeManager.Shared.dll with the matching shared DLL. Preserve other Workshop IDs when adding `3831211166` to saved MultiAddonManager cfg. Allow its download and reconnect clients.
+5. Restart against the staged bundle and complete the acceptance checks below. For rollback, stop the fleet and restore the complete consistent old bundle plus private config/database backups. A copied backup is not a tested restore.
+
+`!modes` opens the admin mode menu; `!mode <name>` directly changes a mode and requires an argument. `!menu` selects a player's menu style; new players default to PanoramaMenu.
+
+## Provenance and licenses
+
+[The machine-readable manifest](bundled-baseline.json) records package SHA-256 values, exact source revisions and hashes of staged binaries. [third_party](../third_party/README.md) contains licenses and corresponding source archives beside the distributed bundle. GMM, GG1 and Gameloop.Vdf are MIT; PanoramaMenuManager/MenuManagerApi, PMM bridge and allocator are GPLv3; CSS is GPLv3 with its upstream linking exception. These are separate components, not relicensed under the fleet's LGPL. Existing Metamod and MultiAddonManager are unchanged.
+
+`scripts/update/pins.json` prevents the generic resource updater from replacing this reviewed stack or downgrading a CI pin. A maintainer must review source, API/ABI compatibility, license, package paths, digests and the entire dependency stack before removing/replacing a pin. It does not discover or auto-install arbitrary latest CI builds. The fleet sidecar remains responsible for stop/lock/overlay orchestration; the obsolete single-host scheduler is not activated or imported.
+
+## Acceptance and known limits
+
+Offline tests cover the actual packaged files, their hashes, matching API copies, lookup paths, config migration, pin enforcement and instance materialization. Docker smoke exercises real containers/mounts and process coordination with an offline Steam fixture. These establish package and orchestration behavior; they do not run the CS2 engine.
+
+The separate original deployment provided server-side evidence for CSS/Metamod loading, bot spawn after FixRandomSpawn 1.2.0, allocator fallback, three mode cfgs, menu plugin loading and mounted Workshop resources. It had 32 private modes; those are not copied into these 34 public defaults. No human client rendered/clicked the menu. That evidence is not acceptance of this fleet or all bundled plugins.
+
+Before deployment acceptance, use a real empty CS2 instance and verify native/managed load logs, bot PRESPAWN/spawn/respawn and round transitions, Competitive/Practice/Retakes execution, weapon allocation, Workshop download, a human joining, opening/clicking `!modes`, a second map request and movement after transitions. The original movement-lock defect remains unresolved upstream; the rejected experimental movement binary is excluded. A startup `Global Variables not initialized yet` warning was observed in the original deployment. A generic LOADED string or responsive status is insufficient health evidence. No live restart, game migration or human acceptance was performed by this change.

@@ -1,5 +1,16 @@
 # Validation evidence
 
+## Reviewed mod baseline (unreleased)
+
+Validated locally on 2026-11-04 without production access. See [bundle provenance, transferred fixes and limits](BUNDLED-FIXES.md). This section applies to the resource upgrade after 0.1.1; the versioned packaging evidence below remains historical.
+
+- All 17 runtime/bundle tests passed (12 existing + 5 new). New checks hash the actual staged payloads and corresponding source archives, check shared/local API identity and dependency/gamedata/autoload paths, preserve all 34 public modes and private custom entries through schema migration, exercise actual binary materialization with preserved private JSON, and invoke the real updater function to prove pinned components never query latest.
+- A Linux amd64 image build and the real Docker/Compose offline fixture smoke passed bootstrap, three independent instance trees/read-only shared mounts, automatic updates, failure quiescence and recovery. All disposable containers/volumes were removed.
+- All five package tests also passed inside that image with networking disabled, mounting this actual resource bundle read-only. The local host needed a scratch jq 1.8.1 binary for the existing development updater prerequisite.
+- All four historical helper tests passed; no legacy scheduler is enabled. Maintained code/docs passed Git whitespace validation; vendor files retain upstream bytes, including CRLF/trailing whitespace.
+- Official CSS and allocator CI runs were freshly checked: conclusion success, exact expected head commits. GMM remains the official 2.0.0 ZIP. License texts, NuGet declarations, source commits and package/file digests are retained with the bundle.
+- No real CS2 engine, client menu rendering, live migration or restore test was performed. FixRandomSpawn redistribution is blocked by the missing upstream license; the unresolved movement defect and rejected experimental patch are documented.
+
 ## v0.1.1 packaging verification
 
 Verified on 2026-11-04 without accessing production:

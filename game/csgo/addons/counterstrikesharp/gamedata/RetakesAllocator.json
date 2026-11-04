@@ -2,8 +2,8 @@
   "GiveNamedItem2": {
     "signatures": {
       "library": "server",
-      "windows": "\\x48\\x83\\xEC\\x38\\x48\\xC7\\x44\\x24\\x28\\x00\\x00\\x00\\x00\\x45\\x33\\xC9\\x45\\x33\\xC0\\xC6\\x44\\x24\\x20\\x00\\xE8\\x2A\\x2A\\x2A\\x2A\\x48\\x85",
-      "linux": "\\x55\\x48\\x89\\xE5\\x41\\x57\\x41\\x56\\x41\\x55\\x41\\x54\\x53\\x48\\x83\\xEC\\x18\\x48\\x89\\x7D\\xC8\\x48\\x85\\xF6\\x74"
+      "windows": "48 83 EC ? 48 C7 44 24 ? ? ? ? ? 45 33 C9 45 33 C0 C6 44 24 ? ? E8 ? ? ? ? 48 83 C4 ? C3 CC CC CC CC CC CC CC CC CC CC CC CC CC CC 48 83 EC",
+      "linux": "45 31 C9 45 31 C0 31 C9 31 D2 E9 ? ? ? ? CC 55 45 31 C9"
     }
   }
 }
