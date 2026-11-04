@@ -28,7 +28,7 @@ exec 3>&1
 # (sourced, not executed: check-updates.sh only runs main() when executed directly)
 # Sourced BEFORE lib.sh so lib.sh's log()/helpers take precedence over anything
 # check-updates.sh defines with the same name.
-CHECK_UPDATES_README="README.md"
+CHECK_UPDATES_README="docs/UPSTREAM.md"
 export CHECK_UPDATES_README
 set +u
 # shellcheck source=scripts/check-updates.sh
@@ -140,8 +140,8 @@ sync_with_remote() {
 # ----------------------------------------------------------------------------- preflight
 preflight() {
     require_tools bash git curl jq unzip tar rsync awk sed grep find cut
-    [ -f README.md ] || die "README.md not found in $(pwd)"
-    grep -q '^Mod | Version | Why$' README.md || die "README.md: could not find the 'Mod | Version | Why' table header"
+    [ -f docs/UPSTREAM.md ] || die "docs/UPSTREAM.md not found in $(pwd)"
+    grep -q '^Mod | Version | Why$' docs/UPSTREAM.md || die "docs/UPSTREAM.md: could not find the 'Mod | Version | Why' table header"
     [ -d "$PLUGIN_SCRIPT_DIR" ] || die "missing directory $PLUGIN_SCRIPT_DIR"
     git rev-parse --is-inside-work-tree >/dev/null 2>&1 || die "$(pwd) is not a git repository"
     [ "$(git rev-parse --show-toplevel)" = "$(pwd -P)" ] || die "must run from the repo root ($(git rev-parse --show-toplevel))"
@@ -237,7 +237,7 @@ process_mod() {   # $1 name, $2 url, $3 current version
         run_isolated plugin_apply
         if [ "$ISOLATED_RC" -ne 0 ]; then fail_mod "plugin_apply failed during dry run"; return 0; fi
         run_isolated readme_set_version "$PLUGIN_NAME" "$PLUGIN_URL" "$OLD_VERSION" "$NEW_VERSION"
-        if [ "$ISOLATED_RC" -ne 0 ]; then fail_mod "README.md version line check failed"; return 0; fi
+        if [ "$ISOLATED_RC" -ne 0 ]; then fail_mod "docs/UPSTREAM.md version line check failed"; return 0; fi
         run_isolated commit_update
         RES_WOULD+=("$PLUGIN_NAME $OLD_VERSION > $NEW_VERSION")
         return 0
@@ -272,11 +272,11 @@ process_mod() {   # $1 name, $2 url, $3 current version
 
     run_isolated readme_set_version "$PLUGIN_NAME" "$PLUGIN_URL" "$OLD_VERSION" "$NEW_VERSION"
     if [ "$ISOLATED_RC" -ne 0 ]; then
-        fail_mod "README.md could not be updated - files are updated but not committed. Fix README.md line for $PLUGIN_NAME manually, then commit with: git add -A -- ${PLUGIN_PATHS[*]} README.md && git commit -m \"- UPDATED: $PLUGIN_NAME $OLD_VERSION > $NEW_VERSION\""
+        fail_mod "docs/UPSTREAM.md could not be updated - files are updated but not committed. Fix docs/UPSTREAM.md line for $PLUGIN_NAME manually, then commit with: git add -A -- ${PLUGIN_PATHS[*]} docs/UPSTREAM.md && git commit -m \"- UPDATED: $PLUGIN_NAME $OLD_VERSION > $NEW_VERSION\""
         STOP_RUN=1; return 0
     fi
     if ! verify_readme_diff; then
-        fail_mod "README.md change is not the expected single-line version bump - not committing. Inspect with 'git diff README.md'."
+        fail_mod "docs/UPSTREAM.md change is not the expected single-line version bump - not committing. Inspect with 'git diff docs/UPSTREAM.md'."
         STOP_RUN=1; return 0
     fi
 
@@ -326,7 +326,7 @@ summary() {
 
 main() {
     if [ "$LIST_ONLY" = 1 ]; then
-        [ -f README.md ] || die "README.md not found in $(pwd)"
+        [ -f docs/UPSTREAM.md ] || die "docs/UPSTREAM.md not found in $(pwd)"
         print_list
         exit 0
     fi
@@ -335,7 +335,7 @@ main() {
 
     local mods name url version slug
     mods=$(list_mods)
-    [ -n "$mods" ] || die "no mods parsed from README.md"
+    [ -n "$mods" ] || die "no mods parsed from docs/UPSTREAM.md"
 
     while IFS='|' read -r name url version; do
         [ -n "$name" ] || continue

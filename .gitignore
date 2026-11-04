@@ -1,17 +1,13 @@
-/tools/
-/server/
-/steamcmd/
-.env copy
-/custom_files/*
-cs2
-tmp
-console.log
-settings.local.json
-CLAUDE.md
-.env
-multi/private/
+/private/
 /data/
+.env
+.env.*
+!.env.example
 __pycache__/
 *.pyc
-multi/shared/*
-!multi/shared/.gitkeep
+/tmp/
+/steamcmd/
+/server/
+/tools.local/
+settings.local.json
+CLAUDE.md

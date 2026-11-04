@@ -1,8 +1,20 @@
-image-build:
-	docker build --platform=linux/amd64 . -t cs2:latest
+.PHONY: test config build smoke up down
 
-run:
-	docker run --platform=linux/amd64  -v ${PWD}/cs2:/home/steam/cs2 -v ${PWD}/custom_files:/home/custom_files cs2:latest 
+test:
+	python3 -m unittest discover -s runtime -v
+	python3 -m unittest discover -s tools/legacy-maintenance -v
 
-run-bash:
-	docker run -it --rm --platform=linux/amd64 --entrypoint=/bin/bash -v ${PWD}/cs2:/home/steam/cs2 -v ${PWD}/custom_files:/home/custom_files cs2:latest 
+config:
+	docker compose config --quiet
+
+build:
+	docker build --platform=linux/amd64 -t cs2-multi-local:latest .
+
+smoke:
+	python3 runtime/docker_smoke.py
+
+up:
+	docker compose up -d
+
+down:
+	docker compose down

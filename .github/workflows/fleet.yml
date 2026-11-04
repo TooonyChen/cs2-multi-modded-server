@@ -22,17 +22,21 @@ jobs:
           persist-credentials: false
       - name: Runtime and historical helper tests
         run: |
-          python3 -m unittest discover -s multi -v
-          python3 -m unittest discover -s multi/legacy-maintenance -v
+          python3 -m unittest discover -s runtime -v
+          python3 -m unittest discover -s tools/legacy-maintenance -v
+      - name: Check maintainer tools and bundled inventory
+        run: |
+          for script in scripts/check-updates.sh scripts/update/*.sh scripts/update/plugins/*.sh; do bash -n "$script"; done
+          bash scripts/update/update.sh --list --no-pull
       - name: Validate public deployment configuration
         run: |
-          mkdir -p multi/private
-          for n in 1 2 3; do cp multi/server.env.example multi/private/server$n.env; done
-          docker compose -f multi/compose.yaml config --quiet
+          mkdir -p private
+          for n in 1 2 3; do cp runtime/server.env.example private/server$n.env; done
+          docker compose config --quiet
       - name: Build Linux amd64 runtime
-        run: docker build --platform linux/amd64 -f multi/Dockerfile -t cs2-multi-local:latest .
+        run: docker build --platform linux/amd64 -t cs2-multi-local:latest .
       - name: Offline Docker coordination and isolation smoke
-        run: python3 multi/docker_smoke.py
+        run: python3 runtime/docker_smoke.py
   publish:
     needs: validate
     if: >-
@@ -77,7 +81,7 @@ jobs:
         id: publish
         with:
           context: .
-          file: multi/Dockerfile
+          file: Dockerfile
           platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}

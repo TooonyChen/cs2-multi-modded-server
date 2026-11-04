@@ -447,7 +447,7 @@ warn_new_settings() {
 # longer ships, and new settings inside files present on both sides are listed so they
 # can be ported by hand. $1 = directory in the extracted archive, $2 = repo directory,
 # $3 = "existing-only" to skip the new/removed-file checks (for partial mirrors such as
-# custom_files_example/).
+# private operator overlays).
 warn_cfg_dir_changes() {
     local src="$1" dest="$2" mode="${3:-}" f
     src="${src%/}"; dest="${dest%/}"
@@ -488,12 +488,12 @@ changed_paths() {
     git status --porcelain=v1 -uall | cut -c4- | sed -E 's/^"(.*)"$/\1/; s/^.* -> //'
 }
 
-# Every change in the tree must be README.md or inside PLUGIN_PATHS.
+# Every change in the tree must be docs/UPSTREAM.md or inside PLUGIN_PATHS.
 verify_containment() {
     local p o ok bad=0
     while IFS= read -r p; do
         [ -n "$p" ] || continue
-        [ "$p" = "README.md" ] && continue
+        [ "$p" = "docs/UPSTREAM.md" ] && continue
         ok=0
         for o in "${PLUGIN_PATHS[@]}"; do
             if path_within "$p" "$o"; then ok=1; break; fi
@@ -545,9 +545,9 @@ readme_line_number() {   # $1 name, $2 url -> prints the single matching line nu
         $0 == "Mod | Version | Why" { inside = 1; next }
         inside && $0 ~ /^$/          { exit }
         inside && index($0, link) == 1 && substr($0, length(link) + 1) ~ /^ *\|/ { print NR }
-    ' README.md)
+    ' docs/UPSTREAM.md)
     count=$(printf '%s\n' "$nums" | grep -c . || true)
-    [ "$count" = 1 ] || die "expected exactly one row in the README.md mod table starting with [$1]($2), found $count"
+    [ "$count" = 1 ] || die "expected exactly one row in the docs/UPSTREAM.md mod table starting with [$1]($2), found $count"
     printf '%s' "$nums"
 }
 
@@ -555,22 +555,22 @@ readme_line_number() {   # $1 name, $2 url -> prints the single matching line nu
 readme_set_version() {   # $1 name, $2 url, $3 old, $4 new
     local n line occurrences
     n=$(readme_line_number "$1" "$2")
-    line=$(sed -n "${n}p" README.md)
+    line=$(sed -n "${n}p" docs/UPSTREAM.md)
     occurrences=$(printf '%s' "$line" | awk -v tok="\`$3\`" '{ print gsub(tok, "") }')
-    [ "$occurrences" = 1 ] || die "README.md line $n does not contain \`$3\` exactly once (found $occurrences): $line"
-    if is_dry; then dry "update README.md line $n: \`$3\` -> \`$4\`"; return 0; fi
-    step "updating README.md line $n: \`$3\` -> \`$4\`"
+    [ "$occurrences" = 1 ] || die "docs/UPSTREAM.md line $n does not contain \`$3\` exactly once (found $occurrences): $line"
+    if is_dry; then dry "update docs/UPSTREAM.md line $n: \`$3\` -> \`$4\`"; return 0; fi
+    step "updating docs/UPSTREAM.md line $n: \`$3\` -> \`$4\`"
     awk -v n="$n" -v old="\`$3\`" -v new="\`$4\`" '
         NR == n { i = index($0, old); if (i > 0) $0 = substr($0, 1, i - 1) new substr($0, i + length(old)) }
         { print }
-    ' README.md > README.md.update-tmp || die "failed to rewrite README.md"
-    mv README.md.update-tmp README.md
+    ' docs/UPSTREAM.md > docs/UPSTREAM.md.update-tmp || die "failed to rewrite docs/UPSTREAM.md"
+    mv docs/UPSTREAM.md.update-tmp docs/UPSTREAM.md
 }
 
 verify_readme_diff() {   # exactly one line replaced
     local stat
-    stat=$(git diff --numstat -- README.md | awk '{print $1"/"$2}')
-    [ "$stat" = "1/1" ] || { err "README.md diff is not a single-line change (added/removed: ${stat:-0/0})"; return 1; }
+    stat=$(git diff --numstat -- docs/UPSTREAM.md | awk '{print $1"/"$2}')
+    [ "$stat" = "1/1" ] || { err "docs/UPSTREAM.md diff is not a single-line change (added/removed: ${stat:-0/0})"; return 1; }
 }
 
 commit_update() {
@@ -581,7 +581,7 @@ commit_update() {
         [ -n "$p" ] && paths+=("$p")
     done < <(changed_paths)
     if is_dry; then
-        dry "git add -A -- ${PLUGIN_PATHS[*]} README.md"
+        dry "git add -A -- ${PLUGIN_PATHS[*]} docs/UPSTREAM.md"
         dry "git commit -m \"$msg\""
         return 0
     fi

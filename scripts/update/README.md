@@ -4,7 +4,7 @@ Part of **Kus' modded Counter Strike 2 (CS2) Dedicated Server**:
 <https://github.com/kus/cs2-modded-server/>
 
 Automates the manual "check releases, download, copy into the repo, bump the README,
-commit" routine for the mods listed in this repo's root `README.md` version table
+commit" routine for the mods listed in this repo's `docs/UPSTREAM.md` version table
 (`Mod | Version | Why`). No AI involved, safe to re-run, and it refuses to act when
 anything looks off.
 
@@ -21,8 +21,7 @@ relative paths work from anywhere inside the repo):
 ./scripts/update/update.sh --no-pull      # skip the pull a local run starts with
 ```
 
-**A local run pulls first.** The GitHub Action commits mod updates straight to `stage`,
-so a local checkout goes stale fast. Before reading any version the script fetches and
+**A local run pulls first.** Before reading any version the script fetches and
 fast-forwards the current branch, otherwise it would read the stale README, decide mods
 are outdated when the Action has already done them, and redo the work. It only ever
 fast-forwards, never merges or rebases:
@@ -55,7 +54,7 @@ For every row of the README version table, top to bottom, one mod at a time:
 
 1. **Check the latest version** with the same functions as `scripts/check-updates.sh`
    (that script is sourced, not copied - the detection logic lives in one place).
-   The *local* `README.md` is the source of truth for the current version, so a mod you
+   The *local* `docs/UPSTREAM.md` is the source of truth for the current version, so a mod you
    just updated and committed is reported as up to date on the next run.
 2. Up to date -> `OK`, next mod. No releases / not detectable -> `?`, next mod.
 3. Update available and **no** `scripts/update/plugins/<slug>.sh` -> warning
@@ -80,27 +79,9 @@ of 5 as `[dry-run] would ...` without downloading, extracting, writing or commit
 Checks against extracted archive contents cannot run in dry-run and are printed as
 `would verify ...`.
 
-## Running it automatically (GitHub Actions)
+## Maintainer use only
 
-`.github/workflows/auto-update-mods.yml` runs this same script daily at 3pm
-Australia/Sydney, and on demand from the Actions tab. It adds nothing of its own: it
-checks out `stage`, runs `./scripts/update/update.sh`, and if that produced commits it
-pushes them and opens a pull request into `master`. Adding a new plugin script here is
-therefore all that is needed for the automation to pick that plugin up too.
-
-- **No update, no noise.** If the script commits nothing, the workflow pushes nothing
-  and opens no pull request.
-- **A human merges.** Commits pushed with the Actions token do not trigger other
-  workflows, so if the bot merged into `master` the `build and publish` workflow would
-  silently not run. Merging the pull request yourself does trigger it.
-- **Failures are surfaced.** If the script exits non-zero the pull request is still
-  opened for the mods that succeeded, the summary is attached, and the job then fails
-  so the run shows up as a failure.
-- The schedule is a single cron at 04:00 UTC. GitHub cron has no timezone, so in Sydney
-  that lands at 3pm during daylight saving and 2pm outside it.
-- Scheduled workflows only fire from the copy of the file on the **default branch**, so
-  this workflow has to be on `master` to run on its own.
-- GitHub disables scheduled workflows after 60 days with no repository activity.
+No scheduled mod-update workflow is enabled. Run this tool only in a disposable development checkout; it modifies bundled resources and creates commits. Review pinned framework/plugin compatibility and config changes before merging, then stage overlay updates in a planned maintenance window. Never run this tool against a running shared installation.
 
 ## Adding a plugin script
 
@@ -237,21 +218,21 @@ Every existing script was derived this way. It takes ten minutes and avoids gues
   was clean, but the run still stopped. Use `pick_dir` to accept both roots rather than
   hard coding one, and keep the oldest supported root as the last candidate.
 - **A README bump done in a separate commit** (cs2-quake-sounds 26.08.1) means the manual
-  commit's file set lacks `README.md`; the script always bumps it in the same commit.
+  commit's file set lacks `docs/UPSTREAM.md`; the script always bumps it in the same commit.
 
 ### Testing a new or changed script
 
 Never test on the real checkout; the tool commits. Use a throwaway local clone:
 
 ```bash
-git clone -q --local --branch stage . /tmp/cs2-test && cd /tmp/cs2-test
+git clone -q --local --branch master . $TMPDIR/cs2-test && cd $TMPDIR/cs2-test
 git revert --no-edit <sha of the mod's last "UPDATED:" commit>   # makes the update pending again
 # if the revert conflicts on README.md context, instead: git checkout <sha>~1 -- <the mod's paths>,
 # set the README row back by hand with sed, and commit
 ./scripts/update/update.sh --dry-run --only <slug>
 ./scripts/update/update.sh --only <slug>
-git show --name-status --format="" HEAD | sort > /tmp/new.txt
-git show --name-status --format="" <sha> | sort > /tmp/old.txt && diff /tmp/old.txt /tmp/new.txt   # expect no diff
+git show --name-status --format="" HEAD | sort > $TMPDIR/new.txt
+git show --name-status --format="" <sha> | sort > $TMPDIR/old.txt && diff $TMPDIR/old.txt $TMPDIR/new.txt   # expect no diff
 ./scripts/update/update.sh --only <slug>      # second run must report "OK <mod> <version>" and change nothing
 ```
 
@@ -308,7 +289,7 @@ downloadable asset (size `0` if unknown).
 | ServerListPlayersFix | `plugins/serverlistplayersfix.sh` | Windows zip + Linux `steamrt3` tar.gz. Replaces only `bin/win64/*.dll` and `bin/linuxsteamrt64/*.so`; the repo's per-platform `.vdf` copies are left alone. |
 | MovementUnlocker | `plugins/movementunlocker.sh` | Windows zip + Linux `steamrt3` tar.gz. Replaces only `bin/win64/*.dll` and `bin/linuxsteamrt64/*.so`; the `.vdf` copies under `addons/surf/` are left alone. |
 | CS2 Retakes | `plugins/cs2-retakes.sh` | Uses the full `RetakesPlugin-<v>.zip` (not the `-no-map-configs` one). Replaces `plugins/disabled/RetakesPlugin` (the plugin is kept disabled in this repo, so it is NOT at `plugins/RetakesPlugin`) and `shared/RetakesPluginShared`. |
-| MatchZy | `plugins/matchzy.sh` | Plain `MatchZy-<v>.zip` (not the `-with-cssharp-*` bundles). Merge-copies the plugin folder over `plugins/disabled/MatchZy` (nothing deleted). `game/csgo/cfg/MatchZy/` and `custom_files_example/cfg/MatchZy/` are customised and never written; new upstream files/settings are only reported for a manual port. |
+| MatchZy | `plugins/matchzy.sh` | Plain `MatchZy-<v>.zip` (not the `-with-cssharp-*` bundles). Merge-copies the plugin folder over `plugins/disabled/MatchZy` (nothing deleted). `game/csgo/cfg/MatchZy/` are customised and never written; new upstream files/settings are only reported for a manual port. |
 | GunGame | `plugins/gungame.sh` | Merge-copies `plugins/disabled/GG2` and `shared/GunGameAPI` (old leftovers like `Dapper.dll`/`runtimes/` are kept, as the manual updates did). `game/csgo/cfg/gungame/` is customised and never written; new upstream files, removed files and new settings are reported for a manual port. |
 | CS2 Deathmatch | `plugins/cs2-deathmatch.sh` | Asset is always `Deathmatch.zip`. Archive root is `addons/counterstrikesharp/` from 1.3.6 and `Deathmatch/` before it; `pick_dir` accepts either. Replaces `plugins/disabled/Deathmatch` and `shared/DeathmatchAPI` whole. `configs/plugins/Deathmatch/` and `gamedata/Deathmatch.json` are not shipped and not touched. |
 | deathrun-manager | `plugins/deathrun-manager.sh` | Replaces `plugins/disabled/DeathrunManager` whole. The shipped `configs/plugins/DeathrunManager/DeathrunManager.json` is never written, only compared (new settings reported). Archive junk (`README-ME.txt`, `logs/`) ignored. |
@@ -345,7 +326,7 @@ downloadable asset (size `0` if unknown).
   committed; reset with `git checkout -- . && git clean -fd game/`.
 - `the update did not change any tracked file under PLUGIN_PATHS` - the release ships
   identical files or the script copies to the wrong place. Nothing was committed.
-- `expected exactly one row in the README.md mod table starting with [<name>](<url>)` -
+- `expected exactly one row in the docs/UPSTREAM.md mod table starting with [<name>](<url>)` -
   the README row was edited; the link text/URL must match the table row exactly.
 - `GitHub API error ... rate limit` - set `GITHUB_TOKEN` or `gh auth login`.
 

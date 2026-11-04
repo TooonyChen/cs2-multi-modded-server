@@ -3,7 +3,7 @@
 # chmod +x check-updates.sh
 
 extract_mods() {
-    local README_URL="https://raw.githubusercontent.com/kus/cs2-modded-server/master/README.md"
+    local README_URL="https://raw.githubusercontent.com/TooonyChen/cs2-multi-modded-server/master/docs/UPSTREAM.md"
 
     # CHECK_UPDATES_README=<path> reads a local README instead (used by scripts/update/update.sh)
     if [ -n "${CHECK_UPDATES_README:-}" ]; then

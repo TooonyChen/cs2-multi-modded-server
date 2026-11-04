@@ -13,7 +13,7 @@
 #   3. Delete the extracted folder
 #
 # The release also ships cfg/MatchZy/*.cfg. The repo's game/csgo/cfg/MatchZy/ (and the copy in
-# custom_files_example/cfg/MatchZy/) is customised, so it is NEVER overwritten here. When
+# upstream example overlay) is customised, so it is NEVER overwritten here. When
 # upstream added a new setting (0.8.12 > 0.8.13 added matchzy_demo_recording_enabled) it was
 # merged into both customised copies by hand; this script only reports new upstream files/settings.
 #
@@ -47,7 +47,6 @@ plugin_apply() {
 
     # heads-up only: the customised cfg/MatchZy copies are never written
     warn_cfg_dir_changes "$x/cfg/MatchZy" "game/csgo/cfg/MatchZy"
-    warn_cfg_dir_changes "$x/cfg/MatchZy" "custom_files_example/cfg/MatchZy" existing-only
 
     remove_extracted "$x"
 }
