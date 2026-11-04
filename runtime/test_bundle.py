@@ -125,12 +125,12 @@ class BundleTests(unittest.TestCase):
         casual = next(m for m in original['GameModes']['List'] if m['Name'] == 'Casual (1.6)')
         self.assertEqual(casual['Config'], 'casual-1.6.cfg')
         casual['Config'] = 'Casual-1.6.cfg'
-        self.assertEqual(migration.migrate(original), expected)
+        self.assertEqual(migration.migrate(original, map_change_owner='preserve'), expected)
         for key in original.keys() - {'Version','Votes'}:
             self.assertEqual(original[key], expected[key], key)
         for key in original['Votes'].keys() - {'Style'}:
             self.assertEqual(original['Votes'][key], expected['Votes'][key])
-        self.assertEqual(migration.migrate(expected), expected)
+        self.assertEqual(migration.migrate(expected, map_change_owner='preserve'), expected)
         # Private/custom entries are carried through without substituting public defaults.
         original['GameModes']['List'].append({'Name':'Custom','Config':'private.cfg','DefaultMap':'123'})
         original['GameModes']['Default'] = original['GameModes']['List'][-1]
