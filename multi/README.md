@@ -1,6 +1,6 @@
 # Fleet architecture and operations
 
-The default image is `ghcr.io/tooonychen/cs2-multi-modded-server:latest` for Linux amd64. Run `docker compose -f multi/compose.yaml pull` followed by `docker compose -f multi/compose.yaml up -d`; no local build or registry login is required for the public package. Set `CS2_IMAGE` to a SHA tag or digest to pin it. The image contains the runtime and SteamCMD, while CS2 is installed into the shared volume on first boot. Valve/Steam terms apply to downloaded game content. The source remains LGPL-3.0.
+The default image is `ghcr.io/tooonychen/cs2-multi-modded-server:0.1.0` for Linux amd64. Run `docker compose -f multi/compose.yaml pull` followed by `docker compose -f multi/compose.yaml up -d`; no local build or registry login is required for the public package. The default is pinned to release `0.1.0`; optionally set `CS2_IMAGE` to another release, a SHA tag or a digest. The image contains the runtime and SteamCMD, while CS2 is installed into the shared volume on first boot. Valve/Steam terms apply to downloaded game content. The source remains LGPL-3.0.
 
 Use one project with `docker compose -f multi/compose.yaml ...`. A service can be copied for any N; do not share an INSTANCE_ID or instance directory. Add every service ID to updater.INSTANCE_IDS for the empty policy. Docker named volumes must live on a local Linux filesystem with working flock; NFS/CIFS/distributed mounts are not supported by this implementation.
 

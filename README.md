@@ -15,7 +15,7 @@ docker compose -f multi/compose.yaml up -d
 docker compose -f multi/compose.yaml logs -f updater
 ```
 
-公开镜像：`ghcr.io/tooonychen/cs2-multi-modded-server:latest`（Linux amd64）。默认 Compose 直接拉取镜像，无需本机编译或 GHCR 登录。镜像只包含运行环境和 SteamCMD；首次启动由 sidecar 下载共享 CS2 安装，游戏内容仍受 Valve/Steam 条款约束。项目源码保留 LGPL-3.0 许可。可用 `CS2_IMAGE=ghcr.io/tooonychen/cs2-multi-modded-server:sha-<完整提交SHA>` 或 `@sha256:<digest>` 固定镜像；`v1.2.3` 发布标签对应 `:1.2.3` 和 `:1.2`。镜像升级先 `pull`，再 `up -d`，私有 data 目录保留。
+公开镜像：`ghcr.io/tooonychen/cs2-multi-modded-server:0.1.0`（Linux amd64）。默认 Compose 直接拉取镜像，无需本机编译或 GHCR 登录。镜像只包含运行环境和 SteamCMD；首次启动由 sidecar 下载共享 CS2 安装，游戏内容仍受 Valve/Steam 条款约束。项目源码保留 LGPL-3.0 许可。可用 `CS2_IMAGE=ghcr.io/tooonychen/cs2-multi-modded-server:sha-<完整提交SHA>` 或 `@sha256:<digest>` 固定镜像；`v1.2.3` 发布标签对应 `:1.2.3` 和 `:1.2`。镜像升级先 `pull`，再 `up -d`，私有 data 目录保留。
 
 GitHub Actions 对 PR 运行测试和离线 Docker smoke，只有可信默认分支和已合入该分支的版本标签通过检查后才能发布；PR 不登录注册表。继承的上游自动更新/发布工作流已移至 `multi/upstream-workflows/*.disabled`，不再运行。
 
