@@ -65,7 +65,8 @@ def main():
             'public void ChangeNextMapCommand(', 'private void DoMapChange(', 'private void ChangeMapInFive(')]
         (out / 'GG.cs').write_text('using CounterStrikeSharp.API; using CounterStrikeSharp.API.Core; using CounterStrikeSharp.API.Modules.Commands; using CounterStrikeSharp.API.Modules.Timers; using Microsoft.Extensions.Logging; public partial class GG { ' + '\n'.join(methods) + ' }')
         subprocess.run(['docker', 'run', '--rm', '--pull=never', '--network=none', '--platform=linux/amd64', '--user', f'{os.getuid()}:{os.getgid()}',
-                        '-e', 'DOTNET_CLI_HOME=/harness', '-e', 'DOTNET_CLI_TELEMETRY_OPTOUT=1',
+                        # Numeric runner UIDs may have no passwd entry; NuGet also needs a writable HOME.
+                        '-e', 'HOME=/harness', '-e', 'DOTNET_CLI_HOME=/harness', '-e', 'DOTNET_CLI_TELEMETRY_OPTOUT=1',
                         '-v', str(out) + ':/harness', '-v', str(ROOT) + ':/repo:ro', '-w', '/harness',
                         IMAGE, 'dotnet', 'run', '--project', 'Harness.csproj', '--', '/repo'], check=True)
 
