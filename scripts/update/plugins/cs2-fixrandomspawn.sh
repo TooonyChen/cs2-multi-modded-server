@@ -11,11 +11,11 @@
 #   2. Extract it. The 1.2.0 archive is laid out relative to addons/counterstrikesharp/:
 #        plugins/FixRandomSpawn/        the plugin itself
 #        gamedata/FixRandomSpawn.json   the signatures
-#   3. Replace game/csgo/addons/counterstrikesharp/plugins/FixRandomSpawn whole, and copy
+#   3. Replace game/csgo/addons/counterstrikesharp/plugins/disabled/FixRandomSpawn whole, and copy
 #      gamedata/FixRandomSpawn.json over game/csgo/addons/counterstrikesharp/gamedata/.
 #   4. Delete the extracted folder
 #
-# The plugin is NOT under plugins/disabled/ - this one runs by default.
+# Keep the optional package under plugins/disabled/; updating must not enable it.
 #
 # The gamedata is upstream-owned signature data, not a customised config, so it is
 # replaced like CounterStrikeSharp's gamedata.json and Inventory Simulator's gamedata.
@@ -34,7 +34,7 @@
 # Not shipped and not touched: there is no configs/plugins/FixRandomSpawn in this repo.
 
 PLUGIN_PATHS=(
-    "game/csgo/addons/counterstrikesharp/plugins/FixRandomSpawn"
+    "game/csgo/addons/counterstrikesharp/plugins/disabled/FixRandomSpawn"
     "game/csgo/addons/counterstrikesharp/gamedata/FixRandomSpawn.json"
 )
 
@@ -43,7 +43,7 @@ plugin_assets() {
 }
 
 plugin_preflight() {
-    require_dir  "game/csgo/addons/counterstrikesharp/plugins/FixRandomSpawn"
+    require_dir  "game/csgo/addons/counterstrikesharp/plugins/disabled/FixRandomSpawn"
     require_dir  "game/csgo/addons/counterstrikesharp/gamedata"
     require_file "game/csgo/addons/counterstrikesharp/gamedata/FixRandomSpawn.json"
 }
@@ -56,11 +56,11 @@ plugin_apply() {
     require_dir  "$x/plugins/FixRandomSpawn/lang"
     require_file "$x/gamedata/FixRandomSpawn.json"
 
-    remove_path "game/csgo/addons/counterstrikesharp/plugins/FixRandomSpawn"
+    remove_path "game/csgo/addons/counterstrikesharp/plugins/disabled/FixRandomSpawn"
     remove_path "game/csgo/addons/counterstrikesharp/gamedata/FixRandomSpawn.json"
 
     copy_dir  "$x/plugins/FixRandomSpawn" \
-              "game/csgo/addons/counterstrikesharp/plugins/FixRandomSpawn"
+              "game/csgo/addons/counterstrikesharp/plugins/disabled/FixRandomSpawn"
     copy_file "$x/gamedata/FixRandomSpawn.json" \
               "game/csgo/addons/counterstrikesharp/gamedata/FixRandomSpawn.json"
 

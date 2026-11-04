@@ -20,7 +20,7 @@ Mod | Version | Why
 [CS2Fixes-RampbugFix](https://github.com/Interesting-exe/CS2Fixes-RampbugFix) | `5-1` | Minimizes rampbugs (needs to be enabled via `!settings` [How?](https://github.com/kus/cs2-modded-server#i-run-a-surfkzbhop-server-and-want-movementunlocker-and-cs2fixes-rampbugfix-permanently-on))
 [CS2_ExecAfter](https://github.com/kus/CS2_ExecAfter) | `1.0.0` | Executes a command after server event (i.e. OnMapStart) or a delay.
 [CS2 Remove Map Weapons](https://github.com/kus/CS2-Remove-Map-Weapons) | `1.0.1` | Remove weapons from the map in CS2 as `mp_weapons_allow_map_placed 0` does not work.
-[CS2-FixRandomSpawn](https://github.com/qstage/CS2-FixRandomSpawn) | `1.2.0` | Official active plugin and global gamedata; enables random spawns across modes by default. Upstream license metadata unknown; see [provenance and behavior](BUNDLED-FIXES.md).
+[CS2-FixRandomSpawn](https://github.com/qstage/CS2-FixRandomSpawn) | `1.2.0` | Official plugin and global gamedata, placed under `plugins/disabled` because its Linux callbacks enable random spawns across modes. Upstream license metadata unknown; see [provenance and behavior](BUNDLED-FIXES.md).
 [GameModeManager](https://github.com/nickj609/GameModeManager) | `2.0.0` | Mode management with the matching Panorama menu stack and Workshop addon 3831211166; see [baseline and migration](BUNDLED-FIXES.md).
 [PanoramaMenuManager](https://github.com/RRimmer/PanoramaMenuManagerCS2) | `1.3.01` | MenuManagerCore and shared MenuManagerApi from the GMM 2.0.0 package
 [GG1MapChooser](https://github.com/ssypchenko/GG1MapChooser) | `1.8.1` | Map voting and shared ggmcAPI

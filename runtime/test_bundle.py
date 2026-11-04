@@ -2,6 +2,7 @@
 import hashlib
 import importlib.util
 import json
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -22,6 +23,50 @@ spec.loader.exec_module(migration)
 
 
 class BundleTests(unittest.TestCase):
+    def test_normal_spawn_default_has_no_global_plugin_override(self):
+        cfg = ROOT/'game/csgo/cfg'
+        self.assertRegex((cfg/'server.cfg').read_text(), r'(?m)^mp_randomspawn 0$')
+        for path in cfg.rglob('*.cfg'):
+            self.assertNotIn('fixrandomspawn', path.read_text().lower(), str(path))
+
+    def test_cache_in_requested_mapgroups_once(self):
+        text = (ROOT/'game/csgo/gamemodes_server.txt').read_text()
+        for group in ['mg_dm', 'mg_retake', 'mg_valve_competitive',
+                      'mg_valve_casual', 'mg_valve_deathmatch', 'mg_valve_retakes']:
+            with self.subTest(group=group):
+                match = re.search(r'"' + group + r'"\s*\{.*?"maps"\s*\{([^}]+)', text, re.S)
+                assert match is not None
+                self.assertEqual(match[1].count('"de_cache"'), 1)
+        self.assertFalse((ROOT/'game/csgo/maps/de_cache.vpk').exists())
+
+    def test_fixrandomspawn_updater_keeps_package_disabled(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            work = Path(tmp)
+            archive = work/'archive'
+            shutil.copytree(CSS/'plugins/disabled/FixRandomSpawn', archive/'plugins/FixRandomSpawn')
+            (archive/'gamedata').mkdir()
+            shutil.copy2(CSS/'gamedata/FixRandomSpawn.json', archive/'gamedata/FixRandomSpawn.json')
+            script = '''
+set -e
+extract_asset() { printf '%s' "$ARCHIVE"; }
+require_file() { test -f "$1"; }
+require_dir() { test -d "$1"; }
+remove_path() { rm -rf -- "$1"; }
+copy_dir() { mkdir -p "$(dirname "$2")"; cp -a "$1" "$2"; }
+copy_file() { mkdir -p "$(dirname "$2")"; cp "$1" "$2"; }
+remove_extracted() { :; }
+source "$HELPER"
+plugin_apply
+plugin_preflight
+'''
+            import os
+            env = dict(os.environ, ARCHIVE=str(archive),
+                       HELPER=str(ROOT/'scripts/update/plugins/cs2-fixrandomspawn.sh'))
+            subprocess.run(['bash', '-c', script], cwd=work, env=env, check=True)
+            result = work/'game/csgo/addons/counterstrikesharp/plugins'
+            self.assertTrue((result/'disabled/FixRandomSpawn/FixRandomSpawn.dll').is_file())
+            self.assertFalse((result/'FixRandomSpawn').exists())
+
     def test_actual_payloads_match_provenance(self):
         manifest = json.loads((ROOT/'docs/bundled-baseline.json').read_text())
         for name, digest in manifest['files'].items():
@@ -36,7 +81,7 @@ class BundleTests(unittest.TestCase):
         self.assertEqual(package['sha256'], '554e5ebe5fb1046e263ff4745477a7f39c91131332918d342ed6e9f595aaed1b')
         expected = {'FixRandomSpawn.dll', 'FixRandomSpawn.pdb', 'FixRandomSpawn.deps.json',
                     'lang/en.json', 'lang/ru.json'}
-        plugin = CSS/'plugins/FixRandomSpawn'
+        plugin = CSS/'plugins/disabled/FixRandomSpawn'
         self.assertEqual({str(p.relative_to(plugin)) for p in plugin.rglob('*') if p.is_file()}, expected)
         self.assertIn('1.2.0'.encode('utf-16-le'), (plugin/'FixRandomSpawn.dll').read_bytes())
         data = json.loads((CSS/'gamedata/FixRandomSpawn.json').read_text())
@@ -46,7 +91,7 @@ class BundleTests(unittest.TestCase):
         self.assertEqual(data['CCSPlayerPawn_EntSelectSpawnPoint_Patch']['signatures']['linux'],
                          '0F 1F 84 00 00 00 00 00')
         self.assertFalse((plugin/'gamedata').exists())
-        self.assertFalse((CSS/'plugins/disabled/FixRandomSpawn').exists())
+        self.assertFalse((CSS/'plugins/FixRandomSpawn').exists())
         for p in [CSS/'gamedata/FixRandomSpawn.json', *[plugin/n for n in expected]]:
             self.assertIn(str(p.relative_to(ROOT)), manifest['files'])
 
@@ -54,7 +99,7 @@ class BundleTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)/'base'; target = Path(tmp)/'instance'
             rel = Path('game/csgo/addons/counterstrikesharp')
-            shutil.copytree(CSS/'plugins/FixRandomSpawn', base/rel/'plugins/FixRandomSpawn')
+            shutil.copytree(CSS/'plugins/disabled/FixRandomSpawn', base/rel/'plugins/disabled/FixRandomSpawn')
             (base/rel/'gamedata').mkdir()
             shutil.copy2(CSS/'gamedata/FixRandomSpawn.json', base/rel/'gamedata/FixRandomSpawn.json')
             config = target/rel/'configs/plugins/FixRandomSpawn/FixRandomSpawn.json'
@@ -62,7 +107,7 @@ class BundleTests(unittest.TestCase):
             private = b'{"warmup_mode":{"enable":true},"ConfigVersion":1}\n'
             config.write_bytes(private)
             materialize(base, target)
-            for name in ['plugins/FixRandomSpawn/FixRandomSpawn.dll', 'gamedata/FixRandomSpawn.json']:
+            for name in ['plugins/disabled/FixRandomSpawn/FixRandomSpawn.dll', 'gamedata/FixRandomSpawn.json']:
                 self.assertEqual((target/rel/name).read_bytes(), (CSS/name).read_bytes())
             self.assertEqual(config.read_bytes(), private)
             self.assertFalse(config.is_symlink())

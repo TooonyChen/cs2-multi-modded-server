@@ -344,11 +344,11 @@
     "game/csgo/addons/multiaddonmanager/bin/multiaddonmanager.so": "3db116901b0ff215bde10dadbab1b191ab684b7d11ae1d978a294066a1eba954",
     "game/csgo/addons/counterstrikesharp/gamedata/RetakesAllocator.json": "6fa48c8e9e052aa85128bef0eb27855045e59d417fdf1c1f841ee49550ec255d",
     "game/csgo/addons/counterstrikesharp/gamedata/gamedata.json": "62bd8c4fba251b5fc95834d01e6c1d92bac9e6f79a6899f6421be6e82170f562",
-    "game/csgo/addons/counterstrikesharp/plugins/FixRandomSpawn/FixRandomSpawn.deps.json": "00d8f8ee6013d70356017aaa9105ef62b3b1165e399e9564022b39f7a596b9a1",
-    "game/csgo/addons/counterstrikesharp/plugins/FixRandomSpawn/FixRandomSpawn.dll": "6c03d8ebe8ae8bc2c4308ff7dcd07811b1eec51969293c64c5d0c8f16e9f729f",
-    "game/csgo/addons/counterstrikesharp/plugins/FixRandomSpawn/FixRandomSpawn.pdb": "cc6f7cc40787b91949dad0dfd96278d95fd7e35864aef8d5e7f501cc8e615523",
-    "game/csgo/addons/counterstrikesharp/plugins/FixRandomSpawn/lang/en.json": "a0703416b7439e6e738f159a72c7d10845707d2b38655381f85e3e34bf91c4fa",
-    "game/csgo/addons/counterstrikesharp/plugins/FixRandomSpawn/lang/ru.json": "824a8eea08cadbdf50d7657d45099c70b4b8bfb8e49bb077cab39c60bbb71fe6",
+    "game/csgo/addons/counterstrikesharp/plugins/disabled/FixRandomSpawn/FixRandomSpawn.deps.json": "00d8f8ee6013d70356017aaa9105ef62b3b1165e399e9564022b39f7a596b9a1",
+    "game/csgo/addons/counterstrikesharp/plugins/disabled/FixRandomSpawn/FixRandomSpawn.dll": "6c03d8ebe8ae8bc2c4308ff7dcd07811b1eec51969293c64c5d0c8f16e9f729f",
+    "game/csgo/addons/counterstrikesharp/plugins/disabled/FixRandomSpawn/FixRandomSpawn.pdb": "cc6f7cc40787b91949dad0dfd96278d95fd7e35864aef8d5e7f501cc8e615523",
+    "game/csgo/addons/counterstrikesharp/plugins/disabled/FixRandomSpawn/lang/en.json": "a0703416b7439e6e738f159a72c7d10845707d2b38655381f85e3e34bf91c4fa",
+    "game/csgo/addons/counterstrikesharp/plugins/disabled/FixRandomSpawn/lang/ru.json": "824a8eea08cadbdf50d7657d45099c70b4b8bfb8e49bb077cab39c60bbb71fe6",
     "game/csgo/addons/counterstrikesharp/gamedata/FixRandomSpawn.json": "78a696a42a2f8b456f50bfcbc72b5d30ac4b1849d015b667ae37ca45577f5911"
   }
 }

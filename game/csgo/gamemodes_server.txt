@@ -128,6 +128,7 @@
 			"displayname"			"Competitive (Valve)"
 			"maps"
 			{
+				"de_cache"		""
 				"de_dust2"			""
 				"de_mirage"			""
 				"de_inferno"		""
@@ -165,6 +166,7 @@
 			"displayname"			"Casual (Valve)"
 			"maps"
 			{
+				"de_cache"		""
 				"de_dust2"			""
 				"de_mirage"			""
 				"de_inferno"		""
@@ -187,6 +189,7 @@
 			"displayname"			"Deathmatch (Valve)"
 			"maps"
 			{
+				"de_cache"		""
 				"de_dust2"			""
 				"de_mirage"			""
 				"de_inferno"		""
@@ -221,6 +224,7 @@
 			"displayname"			"Retakes (Valve)"
 			"maps"
 			{
+				"de_cache"			""
 				"de_dust2"			""
 				"de_mirage"			""
 				"de_inferno"		""
@@ -300,6 +304,7 @@
 			"displayname"			"Retakes"
 			"maps"
 			{
+				"de_cache"		""
 				"de_ancient"	""
 				"de_anubis"		""
 				"de_inferno"	""
@@ -385,6 +390,7 @@
 			"displayname"			"Deathmatch"
 			"maps"
 			{
+				"de_cache"		""
 				"de_vertigo"		""
 				"de_dust2"			""
 				"de_inferno"		""
