@@ -1,8 +1,8 @@
 # Validation evidence
 
-## Reviewed mod baseline (unreleased)
+## v0.1.2 reviewed mod baseline
 
-Validated locally on 2026-11-04 without production access. See [bundle provenance, transferred fixes and limits](BUNDLED-FIXES.md). This section applies to the resource upgrade after 0.1.1; the versioned packaging evidence below remains historical.
+Validated locally on 2026-11-04 without production access. See [bundle provenance, transferred fixes and limits](BUNDLED-FIXES.md). This section applies to the v0.1.2 resource upgrade; the v0.1.1 packaging evidence below remains historical. Hosted release CI and anonymous image provenance are recorded in the [v0.1.2 release](https://github.com/TooonyChen/cs2-multi-modded-server/releases/tag/v0.1.2).
 
 - All 21 runtime/bundle tests passed (12 runtime + 9 package tests). Checks hash the actual staged payloads and corresponding source archives, verify FixRandomSpawn 1.2.0 version/signatures/global gamedata and updater pin, preserve private configuration during actual binary materialization, check dependency/API/autoload paths and retain all 34 public modes with the deliberate Casual filename-case correction. Fresh instance admins are empty, existing private admins survive, and both immediate/map-start Casual settings references resolve with exact case.
 - A Linux amd64 image build and the real Docker/Compose offline fixture smoke passed bootstrap, three independent instance trees/read-only shared mounts, automatic updates, failure quiescence and recovery. All disposable containers/volumes were removed.

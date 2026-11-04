@@ -1,6 +1,6 @@
 # Reviewed bundled fixes and migration
 
-This branch carries transferable fixes from a separately validated server into the public resource bundle. It changes no running server. The English deployment documentation and released image remain at 0.1.1; resource changes need independent review before a later release. Bundled resources are host-mounted, so changing an image tag alone does not update them.
+Release v0.1.2 carries independently reviewed transferable fixes from a separately validated server into the public resource bundle. It changes no running server. Compose and the English deployment documentation select image 0.1.2. Bundled resources are host-mounted, so update the checkout as well as the image; changing an image tag alone does not update them.
 
 ## Included and retained
 

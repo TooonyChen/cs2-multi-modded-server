@@ -9,13 +9,13 @@ Run **one updater + N Counter-Strike 2 servers** with Docker Compose. Share one 
 Based on [Kus' CS2 Modded Server](https://github.com/kus/cs2-modded-server), with its public mod resources preserved. This fork provides a coordinated multi-server runtime and a public deployment image:
 
 ```text
-ghcr.io/tooonychen/cs2-multi-modded-server:0.1.1
+ghcr.io/tooonychen/cs2-multi-modded-server:0.1.2
 ```
 
 No local image build or GHCR login is required. The image targets **Linux amd64**. CS2 itself is downloaded by SteamCMD on first startup.
 
 > [!NOTE]
-> v0.1.1 packages the root repository layout and English documentation. Runtime source and bundled game resources are unchanged from v0.1.0. The original v0.1.0 image remains available.
+> v0.1.2 publishes the reviewed GameModeManager 2.0.0 menu stack, CSS/allocator fixes and FixRandomSpawn 1.2.0 resource bundle. Update the checkout alongside the image; mods are host-mounted. See the [changelog](CHANGELOG.md) and [migration and acceptance limits](docs/BUNDLED-FIXES.md).
 
 ## Features
 
@@ -138,7 +138,7 @@ Edit [compose.yaml](compose.yaml) for instance identities, maps, startup cfgs, m
 
 | Setting | Default | Purpose |
 | --- | --- | --- |
-| `CS2_IMAGE` | `ghcr.io/tooonychen/cs2-multi-modded-server:0.1.1` | Compose image selection for updater and servers |
+| `CS2_IMAGE` | `ghcr.io/tooonychen/cs2-multi-modded-server:0.1.2` | Compose image selection for updater and servers |
 | `UPDATE_POLICY` | `force` | `force` or `empty` update admission policy |
 | `CHECK_INTERVAL` | `300` | Seconds between updater checks; minimum effective interval is 5 seconds |
 | `INSTANCE_IDS` | `server1 server2 server3` | Updater's complete list of participating instances |
@@ -274,10 +274,10 @@ Stopping services preserves their data. Avoid `docker compose down --volumes` on
 
 ### Image upgrades and version pins
 
-The default deployment pins release `0.1.1`. Pulling does not select a newer semantic version automatically. To select another published version, set `CS2_IMAGE` consistently for the whole project, for example in a private local `.env` file:
+The default deployment pins release `0.1.2`. Pulling does not select a newer semantic version automatically. To select another published version, set `CS2_IMAGE` consistently for the whole project, for example in a private local `.env` file:
 
 ```dotenv
-CS2_IMAGE=ghcr.io/tooonychen/cs2-multi-modded-server:0.1.1
+CS2_IMAGE=ghcr.io/tooonychen/cs2-multi-modded-server:0.1.2
 ```
 
 Then run:
