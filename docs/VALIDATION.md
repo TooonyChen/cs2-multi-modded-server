@@ -1,5 +1,11 @@
 # Validation evidence
 
+## v0.1.3 match-end map ownership
+
+The only gameplay default change from v0.1.2 is public GameModeManager `Rotation.Enabled: false → true`. `ModeRotation`, `ModeSchedules`, `WhenServerEmpty` and `MapChooser.ModesInVotes` remain false. GG1 remains the map voter and immediate RTV handler. GG1 automatic end triggers and engine `mp_match_end_changelevel` remain disabled. Plugin binaries and fleet runtime source are unchanged. Saved instance configuration is not overwritten; schema 12 and 13 files with rotation disabled require an explicit `--map-change-owner gmm` or `preserve` choice. See [ownership evidence](MAP-CHANGE-OWNERSHIP.md) and [saved-config migration](BUNDLED-FIXES.md#preserve-saved-configuration).
+
+Tag CI runs the runtime/bundle and historical helper tests, the offline source-backed C# regression (pinned SDK 10.0.403 digest `sha256:de4fe90a98845d75910b9769662465c84de1a934665c431279d1382b2bddc02b`, `--pull=never --network=none`), Compose validation, the Linux amd64 image build and Docker fixture smoke before publishing `0.1.3`. Hosted run URLs, the published digest and anonymous pull provenance are recorded in the [v0.1.3 release](https://github.com/TooonyChen/cs2-multi-modded-server/releases/tag/v0.1.3) after that run. These checks do not start CS2, render a client, or accept map transitions, menus or movement. No production or staging service is changed by publishing this release. The v0.1.2 evidence below remains historical.
+
 ## v0.1.2 reviewed mod baseline
 
 Validated locally on 2026-11-04 without production access. See [bundle provenance, transferred fixes and limits](BUNDLED-FIXES.md). This section applies to the v0.1.2 resource upgrade; the v0.1.1 packaging evidence below remains historical. Hosted release CI and anonymous image provenance are recorded in the [v0.1.2 release](https://github.com/TooonyChen/cs2-multi-modded-server/releases/tag/v0.1.2).

@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.1.3 — 2026-11-04
+
+- Public GameModeManager now sets `Rotation.Enabled=true`, so GMM owns ordinary match-end map advancement. `ModeRotation`, `ModeSchedules`, `WhenServerEmpty` and `MapChooser.ModesInVotes` stay false. GG1 remains the map voter and immediate RTV handler. GG1 automatic end triggers and engine `mp_match_end_changelevel` stay disabled. Plugin binaries are unchanged from v0.1.2; only that bundled JSON default changes.
+- Saved schema 12 or 13 files with `Rotation.Enabled=false` are not overwritten. `scripts/migrate-menu-config.py` requires `--map-change-owner gmm` or `--map-change-owner preserve`. `gmm` sets only `Rotation.Enabled` after the operator disables competing GG1 and engine automatic changes. `preserve` keeps the saved choice and warns; it does not prove an owner exists. Immediate RTV success is not evidence of match-end ownership.
+- CI runs the source-backed C# regression against pinned GMM/GG1 sources and SDK 10.0.403 image `mcr.microsoft.com/dotnet/sdk@sha256:de4fe90a98845d75910b9769662465c84de1a934665c431279d1382b2bddc02b`, with execution offline. It covers five callback scenarios. It does not run CS2.
+- Pin Compose and the deployment guide to image `0.1.3`. Update the checkout as well as the image because mods are host-mounted. Fleet runtime source is unchanged from v0.1.2; a rebuilt image can still have a new digest because the base tag moves. No production or staging change is part of this release.
+
 ## v0.1.2 — 2026-11-04
 
 - Upgrade GameModeManager 1.0.62 to official 2.0.0 with PanoramaMenuManager/MenuManagerApi 1.3.01, GG1MapChooser/ggmcAPI 1.8.1 and PMM_GG1MapChooser 0.1.0. Disable the old WASDMenuAPI autoload and provide an offline schema-12 → 13 migration helper. `!modes` opens the mode menu.

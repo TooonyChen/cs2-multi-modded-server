@@ -1,6 +1,6 @@
 # Reviewed bundled fixes and migration
 
-Release v0.1.2 carries independently reviewed transferable fixes from a separately validated server into the public resource bundle. It changes no running server. Compose and the English deployment documentation select image 0.1.2. Bundled resources are host-mounted, so update the checkout as well as the image; changing an image tag alone does not update them.
+Release v0.1.2 carries independently reviewed transferable fixes from a separately validated server into the public resource bundle. It changes no running server. Release v0.1.3 keeps those plugin binaries and changes only the public GameModeManager default `Rotation.Enabled` to true. Compose and the English deployment documentation select image 0.1.3. Bundled resources are host-mounted, so update the checkout as well as the image; changing an image tag alone does not update them or repair a saved `Rotation.Enabled=false`.
 
 ## Included and retained
 
