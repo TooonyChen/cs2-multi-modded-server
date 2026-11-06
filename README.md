@@ -170,7 +170,9 @@ data/instances/server1/
 ├── addons -> installation/game/csgo/addons
 ├── logs -> installation/game/csgo/logs
 ├── installation/
-└── home/
+├── home/
+├── instance.json      # optional: shared paths this server does not load
+└── overlay/           # optional: private files laid out like game/csgo
 ```
 
 | Configure | Host path for server1 |
@@ -221,6 +223,34 @@ docker compose up -d
 ```
 
 All servers listen on 27015 inside their own containers; host ports distinguish them. Do not share an instance directory or `INSTANCE_ID`. When removing a server, also remove its ID from the updater list so the `empty` policy does not wait for a missing instance.
+
+### Running a different mode on one server
+
+A server that needs a different plugin set, such as a prop hunt server without GameModeManager, can drop shared paths and add private files without a second game download. Add it as a normal service with its own identity, env file, instance directory and ports, then add its ID to updater `INSTANCE_IDS`:
+
+```yaml
+  prophunt:
+    <<: *server
+    environment:
+      <<: *server-env
+      INSTANCE_ID: prophunt
+    env_file: ./private/prophunt.env
+    volumes: ["game:/base:ro", "control:/control", "./data/instances/prophunt:/instance"]
+    ports: ["28015:27015/udp", "28015:27015/tcp"]
+```
+
+Then list the shared paths it must not load in `data/instances/prophunt/instance.json` (relative to `game/csgo`) and put mode-only plugins and settings in `data/instances/prophunt/overlay/`, laid out like `game/csgo`:
+
+```json
+{
+  "exclude": [
+    "addons/counterstrikesharp/plugins/GameModeManager",
+    "addons/counterstrikesharp/shared/GameModeManager.Shared"
+  ]
+}
+```
+
+Both are read on every start, so updates and restarts keep the plugin set. Other servers are not affected. Like every fleet member, the server stops and restarts during fleet updates. See [per-instance plugin sets](docs/OPERATIONS.md#per-instance-plugin-sets) for overlay precedence, setting copies and validation rules.
 
 ## Update Policies
 
@@ -317,7 +347,7 @@ See [development details](docs/DEVELOPMENT.md) and [recorded validation](docs/VA
 
 - Linux amd64 and local Linux filesystems only; NFS/CIFS and distributed locks are unsupported.
 - Updates stop the entire fleet. There is no rolling game update or automatic snapshot rollback.
-- The shared binary/resource set is common to every instance, even when modes and configuration differ.
+- Instances share one binary/resource set by default. A per-instance `instance.json` and `overlay/` can remove shared paths and add private files, but they cannot use a different CS2 build.
 - Dynamically downloaded per-server Workshop content remains private and may duplicate; required common resources must be staged centrally.
 - Existing private settings require deliberate schema migration after plugin changes.
 - The coordination volume is trusted IPC, not isolation between hostile tenants.

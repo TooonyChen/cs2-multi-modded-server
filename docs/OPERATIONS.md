@@ -22,6 +22,7 @@ data/
       logs -> installation/game/csgo/logs
       installation/                # private directories + shared binary symlinks
       home/                        # private Steam user data
+      instance.json, overlay/      # optional per-instance plugin set (see below)
     server2/                       # same layout, separate files
     server3/
 ```
@@ -44,6 +45,38 @@ Some plugins choose another working-directory-relative path; those paths still r
 
 An optional private `data/admin-template/` can hold the three CSS admin JSONs. Explicitly copy selected files into each instance's configs directory when you want identical permissions; they remain independent copies afterwards. Never link or copy an active SQLite database as a shared permissions mechanism. Host editing may require sudo or a deliberate host ACL/group because runtime files belong to UID/GID 10001. Imported trees must be recursively owned by that runtime user before first launch. Both data/ and private/ are excluded from Git and the image build context; env files remain in private/serverN.env.
 
+## Per-instance plugin sets
+
+By default every instance links the same shared plugin set and differs only in its private configuration. An instance that runs a different kind of game (for example a prop hunt server that must not load GameModeManager or Player Model Manager) can drop shared paths and add its own files. Both inputs live in the instance directory and are read by the supervisor on every start, so the result survives updates and restarts:
+
+```text
+data/instances/prophunt/
+  instance.json          # optional: shared paths this instance does not use
+  overlay/               # optional: private files, laid out like game/csgo
+    addons/counterstrikesharp/plugins/<Plugin>/...
+    addons/counterstrikesharp/configs/plugins/<Plugin>/<Plugin>.json
+    cfg/prophunt.cfg
+```
+
+`instance.json` accepts one key. Each entry is a path relative to `game/csgo` and covers that file or directory and everything below it:
+
+```json
+{
+  "exclude": [
+    "addons/counterstrikesharp/plugins/GameModeManager",
+    "addons/counterstrikesharp/shared/GameModeManager.Shared"
+  ]
+}
+```
+
+Unknown keys, absolute paths and `..` are rejected and the server does not start, so a typo cannot silently load the full shared set. An entry that matches no shared path is reported in the server log. Excluded shared links are removed from the instance tree and empty directories they leave are deleted. Private files are never deleted: seeded settings and plugin data under an excluded path stay where they are. Excluding a plugin does not exclude its dependencies; list each shared API directory, Metamod VDF or gamedata file the other servers still need but this one must not load.
+
+The overlay is applied after the shared files and after exclusion, so it wins at any path, including inside an excluded directory. Binaries and resources are linked with relative links, which also resolve from the host. Settings that the runtime treats as mutable (cfg, configs, JSON and similar) are copied as regular private files. Such a copy is replaced when the overlay file changes; live edits made inside the instance survive restarts while the overlay file stays the same. Removing an overlay binary restores the shared file at that path, if any, on the next start. Removing an overlay setting leaves the live copy in place, like any other seeded setting. The overlay must be a real directory and must not contain symlinks.
+
+Overlay and exclusion changes take effect when that server restarts (`docker compose restart prophunt`). They do not trigger the updater, and other instances never see them. Overlay files are not part of the central mod digest; stage changes while the server is stopped. The entrypoint gives `instance.json` and `overlay/` to UID/GID 10001 before dropping privileges, so files created by root or with a private umask still work. Directories the runtime creates are always mode 0755.
+
+A different-mode server is a normal Compose service. Give it its own `INSTANCE_ID`, env file, instance directory and host ports, and add its ID to updater `INSTANCE_IDS`. It shares the downloaded game with the rest of the fleet, so it also stops and restarts with every fleet update.
+
 ## Automatic update protocol
 
 1. The single sidecar takes updater.lock for its lifetime and polls SteamCMD public branch build ID plus a SHA-256 of central mod/custom overlay contents, every CHECK_INTERVAL seconds (default 300).
@@ -62,7 +95,7 @@ Recovery: inspect `docker compose logs updater`, repair network/disk/overlay err
 
 Only launch games via these supervisors. Do not run the old installer, -autoupdate, host SteamCMD, an old cron/timer, or a second Compose project against this base: writers outside the lock protocol invalidate its safety. A second sidecar using the same control volume exits rather than competing. The control volume is trusted writable IPC among these services, not a security boundary between hostile tenants. Containers initialize bind/volume roots as root then run game/updater as UID 10001. They do not mount the Docker socket, request privileged mode or mount overlay filesystems.
 
-Workshop resources already staged in the shared installation are shared. New resources downloaded dynamically by an individual running server remain private, so Workshop caches may duplicate. Stage required common Workshop/maps/materials before migration for identical resources; the sidecar does not discover/synchronize per-server Workshop downloads. Independent configs may intentionally select different modes/maps, but the central binary/resource set is common. Published host UDP/TCP ports are 27015/27016/27017; RCON shares the TCP game port, so restrict TCP with your host/network firewall. A separate GSLT is required for each public server.
+Workshop resources already staged in the shared installation are shared. New resources downloaded dynamically by an individual running server remain private, so Workshop caches may duplicate. Every `steamapps/workshop` tree, and everything under `game/bin/linuxsteamrt64/steamapps` where CS2 keeps its Workshop downloads, belongs to the instance: it is never linked to the read-only base, links left there by earlier releases are removed, and the directory is created writable on every start. Stage required common Workshop/maps/materials before migration for identical resources; the sidecar does not discover/synchronize per-server Workshop downloads. Independent configs may intentionally select different modes/maps. The central binary/resource set is common unless an instance narrows or extends it with a [per-instance plugin set](#per-instance-plugin-sets). Published host UDP/TCP ports are 27015/27016/27017; RCON shares the TCP game port, so restrict TCP with your host/network firewall. A separate GSLT is required for each public server.
 
 Framework/menu package updates are deliberately pinned/staged, not automatically fetched as GitHub latest. The automatic sidecar applies staged overlay changes as well as Steam updates. Historical maintenance source is retained in tools/legacy-maintenance but is not run by this Compose. The active .github/workflows/fleet.yml tests PRs with read-only permissions and publishes the Linux amd64 image only after validation succeeds on trusted default-branch commits or version tags whose commits belong to that branch. Only the publishing job has packages:write. Images carry source/license labels, latest (default branch), full sha-<commit> and semantic version tags. See [validation evidence](VALIDATION.md) for actual run and pull evidence. For a local build, use the verification commands below and set CS2_IMAGE=cs2-multi-local:latest when starting Compose.
 

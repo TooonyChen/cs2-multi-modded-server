@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Each instance can choose its own plugin set. `data/instances/<id>/instance.json` lists shared paths (relative to `game/csgo`) that the instance does not link, and `data/instances/<id>/overlay/` adds private files laid out like `game/csgo`. The supervisor applies both on every start, so excluded plugins stay out after restarts and updates, and stale links are removed. Overlay files win over shared files; overlay settings are copied and re-copied only when the overlay file changes. Invalid paths, unknown keys and symlinks in the overlay stop the server.
+- CS2 Workshop and addon download caches (`steamapps/workshop` and `game/bin/linuxsteamrt64/steamapps`) are always private, writable instance directories. Links into the read-only base left there by earlier releases are removed on start.
+- Directories created by the runtime are mode 0755 regardless of umask. The entrypoint hands `instance.json` and `overlay/` to UID/GID 10001 before starting the server.
+- Tests cover exclusion across restarts, overlay precedence, instance isolation, path confinement, the Workshop cache and umask handling. The Docker smoke runs one server with its own plugin set from 0700 operator files.
+
 ## v0.1.3 — 2026-11-04
 
 - Public GameModeManager now sets `Rotation.Enabled=true`, so GMM owns ordinary match-end map advancement. `ModeRotation`, `ModeSchedules`, `WhenServerEmpty` and `MapChooser.ModesInVotes` stay false. GG1 remains the map voter and immediate RTV handler. GG1 automatic end triggers and engine `mp_match_end_changelevel` stay disabled. Plugin binaries are unchanged from v0.1.2; only that bundled JSON default changes.

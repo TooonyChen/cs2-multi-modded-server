@@ -43,6 +43,13 @@ def main():
                 svc['volumes'].append({'type':'bind','source':str(state),'target':'/instance'})
                 # Do not pass any operator secrets into the fixture.
                 svc['environment']={'INSTANCE_ID':name}
+        # server3 runs its own plugin set from operator files written with a private umask.
+        s3=p/'server3'
+        (s3/'overlay/addons/own').mkdir(parents=True)
+        (s3/'overlay/addons/own/own.vpk').write_text('own')
+        (s3/'instance.json').write_text(json.dumps({'exclude':['fixture.vpk']}))
+        for path in (s3/'overlay',s3/'overlay/addons',s3/'overlay/addons/own'): path.chmod(0o700)
+        for path in (s3/'overlay/addons/own/own.vpk',s3/'instance.json'): path.chmod(0o600)
         up=config['services']['updater']
         up['environment']={'STEAMCMD':'/fixture/steamcmd.py','FIXTURE_BUILD':'/fixture/build',
                            'CHECK_INTERVAL':'5','UPDATE_POLICY':'force',
@@ -73,8 +80,19 @@ def main():
                 assert (p/name/'cfg').is_symlink() and not (p/name/'cfg').readlink().is_absolute()
                 assert not (p/name/'addons/counterstrikesharp/configs/admins.json').is_symlink()
             assert (p/'server1/cfg/operator.cfg').stat().st_ino != (p/'server2/cfg/operator.cfg').stat().st_ino
+            plugin_set=("import os; from pathlib import Path; g=Path('/instance/installation/game/csgo');"
+                        " assert not os.path.lexists(g/'fixture.vpk'); assert (g/'addons/own/own.vpk').read_text()=='own'")
+            assert check(plugin_set,'server3')
+            for name in ('server1','server2'):
+                assert check("from pathlib import Path; g=Path('/instance/installation/game/csgo');"
+                             " assert (g/'fixture.vpk').exists(); assert not (g/'addons/own').exists()",name)
+            for name in ('server1','server3'):
+                run(cmd+['exec','-T','--user','10001',name,'python3','-c',
+                    "from pathlib import Path; w=Path('/instance/installation/game/bin/linuxsteamrt64/steamapps/workshop');"
+                    " assert w.is_dir() and not w.is_symlink(); (w/'appworkshop_730.acf').write_text('private')"])
             print('PASS: three container processes started; all verified /base is read-only')
             print('PASS: host bind shortcuts resolve; cfg/admin JSONs are independent regular files')
+            print('PASS: server3 excludes a shared file and adds its private overlay; Workshop cache is private and writable')
             version.write_text('2')
             wait("from pathlib import Path; assert Path('/base/game/csgo/fixture.vpk').read_text() == '2'; assert Path('/instance/running').exists()")
             print('PASS: sidecar automatically detected and installed build 2; supervisors resumed')
@@ -89,7 +107,8 @@ def main():
                 wait("from pathlib import Path; assert Path('/base/game/csgo/fixture.vpk').read_text() == '3'; assert Path('/instance/running').exists(); assert not Path('/control/updating').exists()", f'server{n}')
             for name in ('server1','server2','server3'):
                 assert (p/name/'cfg/operator.cfg').read_text() == name
-            print('PASS: automatic retry installed build 3 and resumed all three instances; private cfg preserved')
+            assert check(plugin_set,'server3')
+            print('PASS: automatic retry installed build 3 and resumed all three instances; private cfg and plugin set preserved')
             print(run(cmd+['logs','--no-color','updater']))
         finally:
             print(run(cmd+['down','--volumes','--remove-orphans']))

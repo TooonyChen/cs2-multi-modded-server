@@ -29,60 +29,178 @@ def mutable(path):
              not path.name.endswith(('.deps.json', '.runtimeconfig.json'))))
 
 
-def materialize(base, target):
-    """Directory metadata is private; immutable files point at the RO base mount."""
+# Paths below are relative to an instance installation root.
+MODS_ROOT = Path('game/csgo')
+EXECUTABLE = Path('game/bin/linuxsteamrt64/cs2')
+# CS2 stores dynamically downloaded Workshop maps/addons next to its executable.
+WORKSHOP = Path('game/bin/linuxsteamrt64/steamapps/workshop')
+RESERVED = ('.shared-files.json', '.overlay-files.json')
+
+
+def instance_cache(rel):
+    """Steam download caches are written by the running game, so they stay per instance."""
+    return 'steamapps' in rel.parts[1:] or rel.parts[:2] == ('steamapps', 'workshop')
+
+
+def relative_entry(name, what):
+    rel = Path(name)
+    if not str(name) or rel.is_absolute() or '..' in rel.parts or rel == Path('.'):
+        raise RuntimeError('Invalid ' + what + ' path: ' + str(name))
+    return rel
+
+
+def ensure_dir(path):
+    """Create missing directories readable by the runtime user, whatever the umask."""
+    missing = []
+    while not path.exists() and not path.is_symlink():
+        missing.append(path); path = path.parent
+    for item in reversed(missing):
+        item.mkdir()
+        os.chmod(item, 0o755)
+    if missing: path = missing[0]
+    if path.is_symlink() or not path.is_dir():
+        raise RuntimeError('Expected a real directory: ' + str(path))
+
+
+def instance_config(state):
+    """Optional instance.json: {"exclude": ["addons/...", ...]} relative to game/csgo."""
+    path = state/'instance.json'
+    if path.is_symlink():
+        raise RuntimeError('instance.json must not be a symlink')
+    if not path.exists():
+        return {'exclude': []}
+    data = json.loads(path.read_text())
+    if not isinstance(data, dict) or set(data) - {'exclude'}:
+        raise RuntimeError('instance.json must be an object whose only key is "exclude"')
+    exclude = data.get('exclude', [])
+    if not isinstance(exclude, list) or not all(isinstance(x, str) for x in exclude):
+        raise RuntimeError('instance.json "exclude" must be a list of paths')
+    for name in exclude: relative_entry(name, 'instance.json exclude')
+    return {'exclude': exclude}
+
+
+def digest_file(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def materialize(base, target, exclude=(), overlay=None):
+    """Directory metadata is private; immutable files point at the RO base mount.
+
+    `exclude` drops shared paths (relative to game/csgo) from this instance only.
+    `overlay` is a private tree mirroring game/csgo, applied over the shared files.
+    """
     target = target.absolute()
     if any(p.is_symlink() for p in (target, *target.parents)):
         raise RuntimeError('Instance root or ancestor is a symlink: ' + str(target))
-    target.mkdir(parents=True, exist_ok=True)
+    ensure_dir(target)
     def destination(name):
-        rel = Path(name)
-        if rel.is_absolute() or '..' in rel.parts or rel == Path('.'):
-            raise RuntimeError('Invalid shared manifest path: ' + str(name))
+        rel = relative_entry(name, 'shared manifest')
         dest = target / rel
         if any(p.is_symlink() for p in dest.parents if p != target and target in p.parents):
             raise RuntimeError('Instance parent directory is a symlink: ' + str(rel))
         return dest
-    manifest = target / '.shared-files.json'
-    if manifest.is_symlink():
-        raise RuntimeError('Instance manifest is a symlink')
-    old = json.loads(manifest.read_text()) if manifest.exists() else []
+    def record(name):
+        path = target/name
+        if path.is_symlink():
+            raise RuntimeError('Instance manifest is a symlink: ' + name)
+        return json.loads(path.read_text()) if path.exists() else None
+    old = record('.shared-files.json') or []
+    applied = record('.overlay-files.json') or {}
     # Validate cleanup paths before performing any writes, including stale links.
     for name in old: destination(name)
-    current = []
+    for name in applied: destination(name)
+    excluded = [MODS_ROOT/relative_entry(x, 'exclude') for x in exclude]
+    matched = set()
+    def is_excluded(rel):
+        hits = [e for e in excluded if e == rel or e in rel.parents]
+        matched.update(hits)
+        return bool(hits)
+
+    # Build the complete plan first; overlay entries replace shared ones.
+    plan = {}
     for source in sorted(base.rglob('*')):
         rel = source.relative_to(base)
-        if rel == Path('.shared-files.json'):
+        if rel.as_posix() in RESERVED:
             raise RuntimeError('Shared base contains reserved instance manifest')
         if source.is_symlink():
             # Refuse links escaping the installation (including imported overlays).
             source.resolve().relative_to(base.resolve())
-        dest = destination(rel)
+        if instance_cache(rel) or is_excluded(rel):
+            continue
         if source.is_dir():
+            plan[rel] = ('dir', source)
+        elif source.is_file():
+            if rel == EXECUTABLE: plan[rel] = ('exe', source)
+            elif mutable(rel): plan[rel] = ('seed', source)
+            else: plan[rel] = ('link', source)
+    for name in sorted(set(map(str, excluded)) - set(map(str, matched))):
+        print('instance.json exclude matches no shared path: ' + str(Path(name).relative_to(MODS_ROOT)), flush=True)
+    if overlay is not None and (overlay.exists() or overlay.is_symlink()):
+        if overlay.is_symlink() or not overlay.is_dir():
+            raise RuntimeError('Instance overlay must be a real directory: ' + str(overlay))
+        for source in sorted(overlay.rglob('*')):
+            if source.is_symlink():
+                raise RuntimeError('Instance overlay must not contain symlinks: ' + str(source))
+            if not source.is_dir() and not source.is_file():
+                continue
+            rel = MODS_ROOT/source.relative_to(overlay)
+            kind = 'dir' if source.is_dir() else ('copy' if mutable(rel) else 'overlay-link')
+            if rel in plan and (plan[rel][0] == 'dir') != (kind == 'dir'):
+                raise RuntimeError('Instance overlay changes a file into a directory or back: ' + str(rel))
+            plan[rel] = (kind, source)
+    # Every planned entry needs real parent directories; the Workshop cache always exists.
+    for folder in {*(p for rel in plan for p in rel.parents), WORKSHOP} - {Path('.')}:
+        if plan.setdefault(folder, ('dir', None))[0] != 'dir':
+            raise RuntimeError('Planned file is also a parent directory: ' + str(folder))
+
+    current, copies = [], {}
+    for rel in sorted(plan):
+        kind, source = plan[rel]
+        dest = destination(rel)
+        if kind == 'dir':
             if dest.is_symlink():
                 raise RuntimeError('Instance directory is a symlink: ' + str(rel))
-            dest.mkdir(parents=True, exist_ok=True)
-        elif source.is_file():
-            if rel.as_posix() == 'game/bin/linuxsteamrt64/cs2':
+            ensure_dir(dest)
+            continue
+        if dest.is_dir() and not dest.is_symlink():
+            raise RuntimeError('File destination is a directory: ' + str(rel))
+        if kind == 'exe':
+            if dest.is_symlink(): dest.unlink()
+            shutil.copy2(source, dest)
+        elif kind == 'seed':
+            if dest.is_symlink():
+                dest.unlink()
+            if not dest.exists():
+                shutil.copy2(source, dest)
+        elif kind == 'copy':
+            # Re-copy only when the overlay itself changed, so live edits survive restarts.
+            digest = digest_file(source)
+            if dest.is_symlink() or not dest.exists() or applied.get(rel.as_posix()) != digest:
                 if dest.is_symlink(): dest.unlink()
                 shutil.copy2(source, dest)
-            elif mutable(rel):
-                if dest.is_symlink():
-                    dest.unlink()
-                if not dest.exists():
-                    shutil.copy2(source, dest)
-            else:
-                if dest.is_dir():
-                    raise RuntimeError('Binary destination is a directory: ' + str(rel))
-                if dest.exists() or dest.is_symlink():
-                    dest.unlink()
+            copies[rel.as_posix()] = digest
+        else:
+            if dest.exists() or dest.is_symlink():
+                dest.unlink()
+            if kind == 'link':
                 dest.symlink_to(source.absolute())
-                current.append(rel.as_posix())
+            else:  # Relative, so overlay links also resolve from the host.
+                dest.symlink_to(os.path.relpath(source.absolute(), dest.parent))
+            current.append(rel.as_posix())
     for name in set(old) - set(current):
         dest = destination(name)
         if dest.is_symlink():
             dest.unlink()
-    manifest.write_text(json.dumps(current))
+    # Leave no empty plugin directories behind; never delete files.
+    for entry in excluded:
+        top = destination(entry)
+        if top.is_symlink() or not top.is_dir(): continue
+        for root, _, _ in os.walk(top, topdown=False):
+            path = Path(root)
+            if path.relative_to(target) not in plan and not any(path.iterdir()):
+                path.rmdir()
+    (target/'.shared-files.json').write_text(json.dumps(current))
+    (target/'.overlay-files.json').write_text(json.dumps(copies))
 
 
 @contextlib.contextmanager
@@ -154,15 +272,16 @@ def server():
             if (CONTROL/'updating').exists():
                 continue
             game = STATE/'installation'
-            materialize(BASE, game)
+            config = instance_config(STATE)
+            materialize(BASE, game, exclude=config['exclude'], overlay=STATE/'overlay')
             for name in ('cfg', 'addons', 'logs'):
                 actual = game/'game/csgo'/name
-                actual.mkdir(parents=True, exist_ok=True)
+                ensure_dir(actual)
                 shortcut = STATE/name
                 if not shortcut.exists() and not shortcut.is_symlink():
                     shortcut.symlink_to(Path('installation/game/csgo')/name, target_is_directory=True)
-            home = STATE/'home'; home.mkdir(parents=True, exist_ok=True)
-            sdk = home/'.steam/sdk64'; sdk.mkdir(parents=True, exist_ok=True)
+            home = STATE/'home'; ensure_dir(home)
+            sdk = home/'.steam/sdk64'; ensure_dir(sdk)
             client = BASE/'steamclient.so'
             if client.exists():
                 link = sdk/'steamclient.so'
