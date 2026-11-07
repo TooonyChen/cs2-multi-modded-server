@@ -1,5 +1,9 @@
 # Validation evidence
 
+## v0.1.4 per-instance plugin sets and CSS root
+
+Runtime-only release on the v0.1.3 plugin binaries. Tag CI runs the runtime tests (including exclusion, overlay, Workshop cache, private CSS `api/` and the one-time upgrade adoption), the map-owner regression, `runtime/css_root_harness` (a stand-in `CounterStrikeSharp.API` loaded through the hostfxr calls CSS makes: a linked `api/` resolves into the base, the materialized instance resolves inside itself), Compose validation, the image build and the Docker smoke with one server on its own plugin set. These checks do not start CS2. Engine acceptance of a reduced-plugin instance is recorded separately after deployment.
+
 ## v0.1.3 match-end map ownership
 
 The only gameplay default change from v0.1.2 is public GameModeManager `Rotation.Enabled: false → true`. `ModeRotation`, `ModeSchedules`, `WhenServerEmpty` and `MapChooser.ModesInVotes` remain false. GG1 remains the map voter and immediate RTV handler. GG1 automatic end triggers and engine `mp_match_end_changelevel` remain disabled. Plugin binaries and fleet runtime source are unchanged. Saved instance configuration is not overwritten; schema 12 and 13 files with rotation disabled require an explicit `--map-change-owner gmm` or `preserve` choice. See [ownership evidence](MAP-CHANGE-OWNERSHIP.md) and [saved-config migration](BUNDLED-FIXES.md#preserve-saved-configuration).

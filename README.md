@@ -9,13 +9,13 @@ Run **one updater + N Counter-Strike 2 servers** with Docker Compose. Share one 
 Based on [Kus' CS2 Modded Server](https://github.com/kus/cs2-modded-server), with its public mod resources preserved. This fork provides a coordinated multi-server runtime and a public deployment image:
 
 ```text
-ghcr.io/tooonychen/cs2-multi-modded-server:0.1.3
+ghcr.io/tooonychen/cs2-multi-modded-server:0.1.4
 ```
 
 No local image build or GHCR login is required. The image targets **Linux amd64**. CS2 itself is downloaded by SteamCMD on first startup.
 
 > [!NOTE]
-> v0.1.3 keeps the v0.1.2 plugin binaries and enables public GameModeManager `Rotation.Enabled` so GMM owns ordinary match-end map advancement. GG1 still owns map votes and immediate RTV. Saved instance configs are not overwritten. Update the checkout alongside the image; mods are host-mounted. See the [changelog](CHANGELOG.md) and [saved-config migration](docs/BUNDLED-FIXES.md).
+> v0.1.4 lets one fleet run servers with different plugin sets: `instance.json` excludes shared paths and `overlay/` adds private files per instance. Each instance now has its own CounterStrikeSharp root, so instance admin and plugin settings are the ones in effect; an upgraded instance adopts the shared settings it was using once. Plugin binaries are unchanged from v0.1.3. See the [changelog](CHANGELOG.md) and [upgrade note](docs/OPERATIONS.md#upgrading-an-instance-from-v013-css-configs-become-per-instance).
 
 ## Features
 
@@ -138,7 +138,7 @@ Edit [compose.yaml](compose.yaml) for instance identities, maps, startup cfgs, m
 
 | Setting | Default | Purpose |
 | --- | --- | --- |
-| `CS2_IMAGE` | `ghcr.io/tooonychen/cs2-multi-modded-server:0.1.3` | Compose image selection for updater and servers |
+| `CS2_IMAGE` | `ghcr.io/tooonychen/cs2-multi-modded-server:0.1.4` | Compose image selection for updater and servers |
 | `UPDATE_POLICY` | `force` | `force` or `empty` update admission policy |
 | `CHECK_INTERVAL` | `300` | Seconds between updater checks; minimum effective interval is 5 seconds |
 | `INSTANCE_IDS` | `server1 server2 server3` | Updater's complete list of participating instances |
@@ -304,10 +304,10 @@ Stopping services preserves their data. Avoid `docker compose down --volumes` on
 
 ### Image upgrades and version pins
 
-The default deployment pins release `0.1.3`. Pulling does not select a newer semantic version automatically. To select another published version, set `CS2_IMAGE` consistently for the whole project, for example in a private local `.env` file:
+The default deployment pins release `0.1.4`. Pulling does not select a newer semantic version automatically. To select another published version, set `CS2_IMAGE` consistently for the whole project, for example in a private local `.env` file:
 
 ```dotenv
-CS2_IMAGE=ghcr.io/tooonychen/cs2-multi-modded-server:0.1.3
+CS2_IMAGE=ghcr.io/tooonychen/cs2-multi-modded-server:0.1.4
 ```
 
 Then run:
@@ -317,7 +317,7 @@ docker compose pull
 docker compose up -d
 ```
 
-Also update the git checkout. v0.1.3 does not change the runtime entrypoint or plugin binaries from v0.1.2; the public GameModeManager JSON now sets `Rotation.Enabled` true. That file is host-mounted, so an image pull alone does not apply it and does not alter a saved instance copy. Operators with `Rotation.Enabled=false` must choose `--map-change-owner gmm` or `--map-change-owner preserve`. See [saved-config migration](docs/BUNDLED-FIXES.md#preserve-saved-configuration).
+Also update the git checkout. v0.1.4 changes the runtime image (per-instance plugin sets, private CounterStrikeSharp `api/`, writable Workshop cache) and keeps the v0.1.3 plugin binaries and bundled configuration. The first start of each existing instance logs any shared CSS settings it adopts; see the [upgrade note](docs/OPERATIONS.md#upgrading-an-instance-from-v013-css-configs-become-per-instance).
 
 An exact digest can also be used as `ghcr.io/tooonychen/cs2-multi-modded-server@sha256:<digest>`. Images carry source, license and revision labels. Releases publish semantic tags and supplementary `sha-<commit>` tags; default-branch builds also publish `latest`. Keep updater and servers on the same selected image.
 
