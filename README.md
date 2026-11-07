@@ -250,7 +250,7 @@ Then list the shared paths it must not load in `data/instances/prophunt/instance
 }
 ```
 
-Both are read on every start, so updates and restarts keep the plugin set. Other servers are not affected. Like every fleet member, the server stops and restarts during fleet updates. See [per-instance plugin sets](docs/OPERATIONS.md#per-instance-plugin-sets) for overlay precedence, setting copies and validation rules.
+Both are read on every start, so updates and restarts keep the plugin set. Each instance has its own CounterStrikeSharp root, so CSS loads only the plugins in that instance's tree; upgrading from v0.1.3 moves effective CSS settings into the instance once ([upgrade note](docs/OPERATIONS.md#upgrading-an-instance-from-v013-css-configs-become-per-instance)). Other servers are not affected. Like every fleet member, the server stops and restarts during fleet updates. See [per-instance plugin sets](docs/OPERATIONS.md#per-instance-plugin-sets) for overlay precedence, setting copies and validation rules.
 
 ## Update Policies
 

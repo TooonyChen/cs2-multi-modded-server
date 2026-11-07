@@ -28,6 +28,8 @@ jobs:
         run: docker pull --platform linux/amd64 "$(python3 runtime/rotation_harness/run.py --image)"
       - name: Offline source-backed map-owner regression
         run: python3 runtime/rotation_harness/run.py
+      - name: Managed CSS root resolves inside each instance
+        run: python3 runtime/css_root_harness/run.py
       - name: Check maintainer tools and bundled inventory
         run: |
           for script in scripts/check-updates.sh scripts/update/*.sh scripts/update/plugins/*.sh; do bash -n "$script"; done

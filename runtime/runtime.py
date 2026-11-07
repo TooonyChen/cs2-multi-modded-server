@@ -3,6 +3,7 @@
 import contextlib
 import ctypes
 import fcntl
+import filecmp
 import hashlib
 import json
 import os
@@ -34,7 +35,25 @@ MODS_ROOT = Path('game/csgo')
 EXECUTABLE = Path('game/bin/linuxsteamrt64/cs2')
 # CS2 stores dynamically downloaded Workshop maps/addons next to its executable.
 WORKSHOP = Path('game/bin/linuxsteamrt64/steamapps/workshop')
-RESERVED = ('.shared-files.json', '.overlay-files.json')
+RESERVED = ('.shared-files.json', '.overlay-files.json', '.private-files.json',
+            '.css-root-migration.json', '.css-root-migration')
+CSS_ROOT = MODS_ROOT/'addons/counterstrikesharp'
+CSS_API = CSS_ROOT/'api'
+CSS_API_DLL = CSS_API/'CounterStrikeSharp.API.dll'
+# Managed CounterStrikeSharp takes its root (plugins, shared, configs, admins) from the
+# location of api/CounterStrikeSharp.API.dll, and the .NET host resolves symlinks there.
+# A linked api/ therefore makes every instance load plugins and configs from /base.
+# These trees are real per-instance copies, refreshed whenever the shared file changes.
+PRIVATE_COPY = (CSS_API,)
+
+
+def private_copy(rel):
+    return any(p == rel or p in rel.parents for p in PRIVATE_COPY)
+
+
+def same_file(a, b):
+    return (b.is_file() and not b.is_symlink() and a.stat().st_size == b.stat().st_size and
+            filecmp.cmp(a, b, shallow=False))
 
 
 def instance_cache(rel):
@@ -83,6 +102,38 @@ def digest_file(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def adopt_shared_css_configs(base, target, destination, skip):
+    """One-time upgrade from a linked CSS api/ (v0.1.3 and earlier).
+
+    Until now managed CSS resolved its root to /base, so it read configs/ (admins, groups,
+    overrides, plugin settings) and plugin-local settings from the shared tree and the
+    seeded instance copies were never in effect. Before the instance root becomes
+    authoritative, replace each differing instance copy with the shared file it actually
+    used, keeping the old copy under .css-root-migration/.
+    """
+    adopted = []
+    source_root = base/CSS_ROOT
+    if source_root.is_dir() and not source_root.is_symlink():
+        for source in sorted(source_root.rglob('*')):
+            rel = source.relative_to(base)
+            if (source.is_symlink() or not source.is_file() or skip(rel) or
+                    private_copy(rel) or not mutable(rel)):
+                continue
+            dest = destination(rel)
+            if dest.is_symlink() or not dest.is_file() or same_file(source, dest):
+                continue
+            saved = destination(Path('.css-root-migration')/rel)
+            ensure_dir(saved.parent)
+            shutil.copy2(dest, saved)
+            shutil.copy2(source, dest)
+            adopted.append(rel.as_posix())
+            print('Adopted the effective shared CSS config ' + rel.as_posix() +
+                  '; previous instance copy saved in .css-root-migration/', flush=True)
+    marker = target/'.css-root-migration.json'
+    marker.write_text(json.dumps({'adopted': adopted}))
+    return adopted
+
+
 def materialize(base, target, exclude=(), overlay=None):
     """Directory metadata is private; immutable files point at the RO base mount.
 
@@ -106,15 +157,18 @@ def materialize(base, target, exclude=(), overlay=None):
         return json.loads(path.read_text()) if path.exists() else None
     old = record('.shared-files.json') or []
     applied = record('.overlay-files.json') or {}
+    private_old = record('.private-files.json') or []
     # Validate cleanup paths before performing any writes, including stale links.
-    for name in old: destination(name)
-    for name in applied: destination(name)
+    for name in (*old, *applied, *private_old): destination(name)
     excluded = [MODS_ROOT/relative_entry(x, 'exclude') for x in exclude]
     matched = set()
     def is_excluded(rel):
         hits = [e for e in excluded if e == rel or e in rel.parents]
         matched.update(hits)
         return bool(hits)
+    if CSS_API_DLL.as_posix() in old and record('.css-root-migration.json') is None:
+        adopt_shared_css_configs(base, target, destination,
+                                 lambda rel: any(e == rel or e in rel.parents for e in excluded))
 
     # Build the complete plan first; overlay entries replace shared ones.
     plan = {}
@@ -131,6 +185,7 @@ def materialize(base, target, exclude=(), overlay=None):
             plan[rel] = ('dir', source)
         elif source.is_file():
             if rel == EXECUTABLE: plan[rel] = ('exe', source)
+            elif private_copy(rel): plan[rel] = ('private', source)
             elif mutable(rel): plan[rel] = ('seed', source)
             else: plan[rel] = ('link', source)
     for name in sorted(set(map(str, excluded)) - set(map(str, matched))):
@@ -144,7 +199,8 @@ def materialize(base, target, exclude=(), overlay=None):
             if not source.is_dir() and not source.is_file():
                 continue
             rel = MODS_ROOT/source.relative_to(overlay)
-            kind = 'dir' if source.is_dir() else ('copy' if mutable(rel) else 'overlay-link')
+            kind = ('dir' if source.is_dir() else 'private' if private_copy(rel) else
+                    'copy' if mutable(rel) else 'overlay-link')
             if rel in plan and (plan[rel][0] == 'dir') != (kind == 'dir'):
                 raise RuntimeError('Instance overlay changes a file into a directory or back: ' + str(rel))
             plan[rel] = (kind, source)
@@ -153,7 +209,7 @@ def materialize(base, target, exclude=(), overlay=None):
         if plan.setdefault(folder, ('dir', None))[0] != 'dir':
             raise RuntimeError('Planned file is also a parent directory: ' + str(folder))
 
-    current, copies = [], {}
+    current, copies, private = [], {}, []
     for rel in sorted(plan):
         kind, source = plan[rel]
         dest = destination(rel)
@@ -167,6 +223,12 @@ def materialize(base, target, exclude=(), overlay=None):
         if kind == 'exe':
             if dest.is_symlink(): dest.unlink()
             shutil.copy2(source, dest)
+        elif kind == 'private':
+            # A real file, so the .NET host resolves it inside this instance.
+            if dest.is_symlink(): dest.unlink()
+            if not same_file(source, dest):
+                shutil.copy2(source, dest)
+            private.append(rel.as_posix())
         elif kind == 'seed':
             if dest.is_symlink():
                 dest.unlink()
@@ -191,6 +253,11 @@ def materialize(base, target, exclude=(), overlay=None):
         dest = destination(name)
         if dest.is_symlink():
             dest.unlink()
+    # Runtime-owned copies whose source disappeared (e.g. a CSS upgrade dropped a file).
+    for name in set(private_old) - set(private):
+        dest = destination(name)
+        if dest.is_file() and not dest.is_symlink():
+            dest.unlink()
     # Leave no empty plugin directories behind; never delete files.
     for entry in excluded:
         top = destination(entry)
@@ -201,6 +268,7 @@ def materialize(base, target, exclude=(), overlay=None):
                 path.rmdir()
     (target/'.shared-files.json').write_text(json.dumps(current))
     (target/'.overlay-files.json').write_text(json.dumps(copies))
+    (target/'.private-files.json').write_text(json.dumps(private))
 
 
 @contextlib.contextmanager

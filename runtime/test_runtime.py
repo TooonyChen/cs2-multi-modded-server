@@ -474,6 +474,87 @@ class RuntimeTests(unittest.TestCase):
                 with self.subTest(path=rel):
                     self.assertEqual(stat.S_IMODE((p/rel).stat().st_mode), 0o755)
 
+    CSS = 'game/csgo/addons/counterstrikesharp'
+    API = CSS + '/api'
+
+    def css_fixture(self, root):
+        base = self.shared_fixture(root)
+        for name, text in {'CounterStrikeSharp.API.dll': 'api v1',
+                           'CounterStrikeSharp.API.deps.json': '{"deps": 1}',
+                           'CounterStrikeSharp.API.runtimeconfig.json': '{"runtime": 1}',
+                           'Serilog.dll': 'serilog'}.items():
+            (base/self.API/name).parent.mkdir(parents=True, exist_ok=True)
+            (base/self.API/name).write_text(text)
+        (base/self.CSS/'dotnet/host/fxr/10.0.3').mkdir(parents=True)
+        (base/self.CSS/'dotnet/host/fxr/10.0.3/libhostfxr.so').write_text('fxr')
+        return base
+
+    def test_css_api_is_a_private_copy(self):
+        # The .NET host resolves api/CounterStrikeSharp.API.dll through symlinks and managed CSS
+        # takes its plugins/configs root from that location, so a linked api/ points CSS at /base.
+        import runtime as m
+        with tempfile.TemporaryDirectory() as t:
+            p = pathlib.Path(t); base = self.css_fixture(p); a = p/'a'
+            m.materialize(base, a)
+            api = a/self.API
+            for name in ('CounterStrikeSharp.API.dll', 'CounterStrikeSharp.API.deps.json',
+                         'CounterStrikeSharp.API.runtimeconfig.json', 'Serilog.dll'):
+                with self.subTest(name=name):
+                    self.assertFalse((api/name).is_symlink())
+                    self.assertEqual((api/name).read_text(), (base/self.API/name).read_text())
+                    self.assertEqual(os.path.realpath(api/name), str(api/name))
+            # The rest of CSS stays shared: the runtime and the plugin binaries are links.
+            self.assertTrue((a/self.CSS/'dotnet/host/fxr/10.0.3/libhostfxr.so').is_symlink())
+            self.assertTrue((a/self.CSS/'plugins/SimpleAdmin/SimpleAdmin.dll').is_symlink())
+            # A shared CSS update refreshes the copy; a dropped file disappears.
+            (base/self.API/'CounterStrikeSharp.API.dll').write_text('api v2')
+            (base/self.API/'Serilog.dll').unlink()
+            m.materialize(base, a)
+            self.assertEqual((api/'CounterStrikeSharp.API.dll').read_text(), 'api v2')
+            self.assertFalse(os.path.lexists(api/'Serilog.dll'))
+            # An instance overlay may replace an api file; it is copied as well.
+            overlay = p/'overlay'; (overlay/'addons/counterstrikesharp/api').mkdir(parents=True)
+            (overlay/'addons/counterstrikesharp/api/CounterStrikeSharp.API.dll').write_text('own api')
+            m.materialize(base, a, overlay=overlay)
+            self.assertFalse((api/'CounterStrikeSharp.API.dll').is_symlink())
+            self.assertEqual((api/'CounterStrikeSharp.API.dll').read_text(), 'own api')
+            # A fresh instance never needs the upgrade migration.
+            self.assertFalse((a/'.css-root-migration.json').exists())
+
+    def test_upgrade_adopts_the_shared_css_configs_that_were_in_effect(self):
+        import runtime as m
+        import json
+        with tempfile.TemporaryDirectory() as t:
+            p = pathlib.Path(t); base = self.css_fixture(p); a = p/'a'
+            admins = self.CSS + '/configs/admins.json'
+            core = self.CSS + '/configs/core.json'
+            local = self.CSS + '/plugins/SimpleAdmin/SimpleAdmin.json'
+            for rel, text in {admins: '{"Tony": 1}', core: '{"autoload": true}', local: '{"db": "shared"}'}.items():
+                (base/rel).write_text(text)
+            # Lay the instance out as v0.1.3 did: api/ linked into /base, seeds never read by CSS.
+            m.materialize(base, a)
+            for rel, text in {admins: '{}', local: '{"db": "stale"}'}.items():
+                (a/rel).write_text(text)
+            for name in json.loads((a/'.private-files.json').read_text()):
+                (a/name).unlink(); (a/name).symlink_to(base/name)
+            (a/'.shared-files.json').write_text(json.dumps(
+                json.loads((a/'.shared-files.json').read_text()) + json.loads((a/'.private-files.json').read_text())))
+            (a/'.private-files.json').unlink()
+            m.materialize(base, a, exclude=['addons/counterstrikesharp/plugins/GameModeManager'])
+            self.assertEqual((a/admins).read_text(), '{"Tony": 1}')
+            self.assertEqual((a/local).read_text(), '{"db": "shared"}')
+            self.assertEqual((a/core).read_text(), '{"autoload": true}')
+            self.assertEqual((a/'.css-root-migration'/admins).read_text(), '{}')
+            self.assertEqual((a/'.css-root-migration'/local).read_text(), '{"db": "stale"}')
+            self.assertEqual(sorted(json.loads((a/'.css-root-migration.json').read_text())['adopted']),
+                             sorted([admins, local]))
+            self.assertFalse((a/self.API/'CounterStrikeSharp.API.dll').is_symlink())
+            # Runs once: later instance edits are the authoritative settings and survive restarts.
+            (a/admins).write_text('{"Tony": 1, "Alyssa": 1}')
+            m.materialize(base, a)
+            self.assertEqual((a/admins).read_text(), '{"Tony": 1, "Alyssa": 1}')
+            self.assertEqual((base/admins).read_text(), '{"Tony": 1}')
+
     def test_public_build_ignores_depot_public_manifests(self):
         import runtime as m
         text='"manifests" { "public" { "gid" "123" } } "branches" { "public" { "buildid" "26393695" } }'
